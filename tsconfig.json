@@ -1,0 +1,26 @@
+{
+	"compilerOptions": {
+		"lib": [
+			"ESNext",
+			"DOM"
+		],
+		"noEmit": true,
+		"module": "esnext",
+		"target": "esnext",
+		"skipLibCheck": true,
+		"isolatedModules": true,
+		"resolveJsonModule": true,
+		"moduleResolution": "bundler",
+		"useDefineForClassFields": true,
+		"allowImportingTsExtensions": true,
+		"types": ["bun", "node", "@rsbuild/core/types"],
+		"paths": {
+			"@/*": [
+				"./sandbox/*"
+			]
+		}
+	},
+	"exclude": [
+		"node_modules"
+	]
+}

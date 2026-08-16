@@ -1,0 +1,10 @@
+{
+	"extends": "../tsconfig.json",
+	"include": [
+		"index.ts",
+		"rslib.config.ts",
+		"rpcMacroLoader.ts",
+		"pluginRpcMacro.ts",
+		"serverEngine.ts"
+	]
+}

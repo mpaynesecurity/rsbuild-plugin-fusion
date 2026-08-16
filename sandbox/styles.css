@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+body {
+    background-color: oklch(23% 2% 259deg);
+    font-family: sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+.navlink {
+    @apply text-gray-300 hover:bg-gray-700 active:bg-indigo-600 px-3 py-2 rounded-md font-medium transition-colors flex-1
+}
+
+.mobile-navlink {
+    @apply block text-gray-300 hover:bg-gray-700  active:bg-indigo-600 px-3 py-2 rounded-md font-medium transition-colors inset-shadow-sm
+}
+
+.card-header {
+    @apply bg-dark-header rounded-t-xl p-1
+}
+
+.card-footer {
+    @apply bg-dark-header rounded-b-xl p-1
+}
+
+.card {
+    @apply rounded-xl  border border-gray-500/80 bg-dark p-3 shadow-md w-fit
+}
+
+.label {
+    @apply font-bold text-cyan-50
+}
+
+.input {
+    @apply border border-gray-600 focus-visible:border-indigo-600/80 outline-none px-2 py-1 rounded-sm bg-gray-800/30
+}
+
+@theme {
+    --color-body: oklch(15% 2% 277deg);
+    --color-dark: oklch(0.144 0.019 261.156);
+    --color-navbar: oklch(27% 4% 265deg);
+    --color-dark-gray: oklch(23% 2% 259deg);
+    --color-dark-header: oklch(0.238 0.006 258.363);
+    --color-card-body: oklch(0.252 0.014 267.008)
+}

@@ -1,0 +1,14 @@
+{
+	"extends": "../tsconfig.json",
+	"compilerOptions": {
+		"jsxImportSource": "solid-js",
+		"jsx": "preserve",
+	},
+	"include": [
+		"components",
+		"layouts",
+		"pages",
+		"types",
+		"index.tsx"
+	]
+}

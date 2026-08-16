@@ -1,0 +1,19 @@
+{
+	"name": "sandbox",
+	"version": "0.0.0",
+	"type": "module",
+	"scripts": {
+		"clean": "rm -rf node_modules"
+	},
+	"dependencies": {
+		"@mpaynesecurity/fusion": "workspace:*"
+	},
+	"devDependencies": {
+		"@solidjs/router": "catalog:",
+		"@types/bun": "catalog:",
+		"@types/node": "catalog:",
+		"solid-js": "catalog:",
+		"cross-env": "catalog:",
+		"tailwindcss": "^4.3.1"
+	}
+}
