@@ -1,12 +1,12 @@
-let clientAssets: Record<string, {isGzip: boolean; content: string}> = {}
+let clientAssets: Record<string, {isGzip: boolean; content?: string; bytes?: number[]}> = {}
 
 const __rpcFunctions = new Map<string, (...args: any[]) => any>()
 
 /*!__RPC_FUNCTIONS_INJECTION_TOKEN__*/
 
-const ASSETS = JSON.parse(JSON.stringify(clientAssets))
-
 /*!__CLIENT_ASSETS_INJECTION_TOKEN__*/
+
+const ASSETS = JSON.parse(JSON.stringify(clientAssets))
 
 const MIME: Record<string, string> = {
 	"html": "text/html",
@@ -25,13 +25,7 @@ const base64ToUint8 = (base64: string): Uint8Array => {
 	return bytes
 }
 
-/**
- * Stream decompress directly via standard blobs instead of double Response shells
- * @param {Uint8Array} uint8Array
- * @returns {Promise<Uint8Array>}
- */
 const gunzipWeb = async (uint8Array: Uint8Array): Promise<Uint8Array> => {
-	// Extract the underlying buffer and tell TS strictly that it's a standard ArrayBuffer
 	const rawBuffer = uint8Array.buffer as ArrayBuffer
 	
 	const stream = new ReadableStream({
@@ -45,30 +39,34 @@ const gunzipWeb = async (uint8Array: Uint8Array): Promise<Uint8Array> => {
 	const buffer = await response.arrayBuffer()
 	return new Uint8Array(buffer)
 }
-//endregion
 
-//region Pre Compilation
-// Maps out the entries from configuration target
 const DECODED_ASSETS = Object.entries(ASSETS).reduce((acc, [key, asset]: [string, any]) => {
 	acc[key] = {
 		isGzip: !!asset.isGzip,
-		bytes: base64ToUint8(asset.content || ""),
+		bytes: asset.isGzip && asset.content
+		       ? base64ToUint8(asset.content)
+		       : new Uint8Array(asset.bytes || []),
 	}
 	return acc
 }, {} as Record<string, {isGzip: boolean; bytes: Uint8Array}>)
-//endregion
 
-//region Modern Runtimes
-// This runs on "Modern" platforms such as Cloudflare Workers, Vercel, etc
 const serverEngine = {
 	async fetch(req: Request) {
 		const url = new URL(req.url)
 		let pathname = url.pathname === "/" ? "/index.html" : url.pathname
 		
+		// Normalized pathname to prevent double-slash bypass traps (e.g. "//api/rpc")
+		const cleanPath = pathname.replace(/\/+/g, "/")
+		
 		// ─── RPC GATEWAY ───
-		if(pathname.startsWith("/api/rpc")) {
+		if(cleanPath.startsWith("/fusion/rpc")) {
 			const id = url.searchParams.get("id")
-			if(!id || !__rpcFunctions.has(id)) return new Response(null, {status: 404})
+			if(!id || !__rpcFunctions.has(id)) {
+				return new Response(JSON.stringify({error: `RPC Route Not Found: ${id || "missing id"}`}), {
+					status: 404,
+					headers: {"Content-Type": "application/json"},
+				})
+			}
 			
 			try {
 				const formData = await req.formData()
@@ -108,9 +106,11 @@ const serverEngine = {
 			}
 		}
 		
-		// Asset router
+		// ─── ASSET ROUTER ───
 		let asset = DECODED_ASSETS[pathname]
-		if(!asset && DECODED_ASSETS["/index.html"]) {
+		
+		// FIX: Only fallback to index.html if this is NOT a backend /api request!
+		if(!asset && !cleanPath.startsWith("/fusion/rpc") && DECODED_ASSETS["/index.html"]) {
 			pathname = "/index.html"
 			asset = DECODED_ASSETS["/index.html"]
 		}
@@ -125,7 +125,7 @@ const serverEngine = {
 			const compressedBytes = asset.bytes
 			
 			if(asset.isGzip && acceptEncoding.includes("gzip")) {
-				const body = compressedBytes.buffer as ArrayBuffer // Clean standard memory block
+				const body = compressedBytes.buffer as ArrayBuffer
 				return new Response(body, {
 					status: 200,
 					headers: {
@@ -147,80 +147,17 @@ const serverEngine = {
 				},
 			})
 		}
-		return new Response(null, {status: 404})
+		
+		// If it's an unhandled API endpoint, return an explicit JSON error instead of text
+		if(cleanPath.startsWith("/fusion/rpc")) {
+			return new Response(JSON.stringify({error: `Unhandled API endpoint: ${cleanPath}`}), {
+				status: 404,
+				headers: {"Content-Type": "application/json"},
+			})
+		}
+		
+		return new Response("Not Found", {status: 404})
 	},
 }
 
 export default serverEngine
-//endregion
-
-/*
- //region Legacy Adapter
- // This fires up ONLY if running inside standard Node.js environment
- if(runtime === "node") {
- import("node:http").then((http) => {
- http.createServer(async (nodeReq, nodeRes) => {
- try {
- const protocol = (nodeReq.headers["x-forwarded-proto"] as string) || "http"
- const host = nodeReq.headers.host || "localhost:3000"
- 
- // Map and stringify headers to satisfy strict Web API formats
- const webHeaders = new Headers()
- for(const [key, value] of Object.entries(nodeReq.headers)) {
- if(value === undefined) continue
- if(Array.isArray(value)) {
- for(const val of value) {
- webHeaders.append(key, val)
- }
- }
- else {
- webHeaders.set(key, value)
- }
- }
- 
- // Adapt legacy Node stream chunks into a modern Web ReadableStream
- let webBody: ReadableStream | undefined = undefined
- if(nodeReq.method !== "GET" && nodeReq.method !== "HEAD") {
- webBody = new ReadableStream({
- start(controller) {
- nodeReq.on("data", (chunk) => controller.enqueue(chunk))
- nodeReq.on("end", () => controller.close())
- nodeReq.on("error", (err) => controller.error(err))
- },
- })
- }
- 
- // Construct the web standard request layout
- const webReq = new Request(new URL(nodeReq.url || "", `${protocol}://${host}`), {
- method: nodeReq.method,
- headers: webHeaders,
- body: webBody,
- // @ts-ignore - Explicitly allow duplex connection for standard streaming targets.
- // Needed for Node versions requiring duplex flag for streaming bodies
- duplex: webBody ? "half" : undefined,
- })
- 
- const webRes = await serverEngine.fetch(webReq)
- 
- // Write headers back cleanly
- nodeRes.statusCode = webRes.status
- webRes.headers.forEach((value, key) => {
- // Use append to safely preserve multi-value headers like set-cookie
- nodeRes.appendHeader?.(key, value) || nodeRes.setHeader(key, value)
- })
- 
- // Stream the response buffer directly out the door
- const arrayBuffer = await webRes.arrayBuffer()
- nodeRes.end(new Uint8Array(arrayBuffer))
- }
- catch(e) {
- console.error("[Bridge Crash]:", e)
- nodeRes.statusCode = 500
- nodeRes.end("Internal Bridge Error")
- }
- }).listen(process.env.PORT || 3000)
- console.log("Application active via Node.js bridge on http://localhost:" + (process.env.PORT || 3000))
- })
- }
- //endregion
- */

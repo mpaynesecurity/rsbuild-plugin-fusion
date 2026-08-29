@@ -1,5 +1,5 @@
 {
-	"name": "@mpaynesecurity/fusion",
+	"name": "@mpaynesecurity/rsbuild-plugin-fusion",
 	"version": "1.0.0",
 	"type": "module",
 	"exports": {
@@ -9,24 +9,25 @@
 		}
 	},
 	"types": "./dist/index.d.ts",
-	"files": [
-		"dist"
-	],
+	"repository": {
+		"type": "git",
+		"url": "payneusmc07/rsbuild-plugin-fusion",
+		"directory": "plugin"
+	},
 	"publishConfig": {
 		"access": "public"
 	},
 	"scripts": {
-		"build": "NODE_ENV=development rslib",
+		"build": "cross-env NODE_ENV=development rslib",
 		"build:rsdoctor": "cross-env RSDOCTOR=true rslib",
-		"clean": "rm -rf node_modules",
-		"publish:local": "bunx publish --registry https://registry.mpaynesecurity.net"
+		"clean:node": "rm -rf node_modules",
+		"clean:dist": "rm -rf dist",
+		"publish:local": "bun publish --registry https://registry.mpaynesecurity.net"
 	},
 	"dependencies": {
 		"oxc-walker": "^1.1.1",
-		"oxc-parser": "^0.144.0",
-		"magic-string": "catalog:",
-		"pathe": "catalog:",
-		"std-env": "catalog:"
+		"oxc-parser": "^0.146.0",
+		"magic-string": "^1.2.2"
 	},
 	"devDependencies": {
 		"@rsdoctor/rspack-plugin": "catalog:",

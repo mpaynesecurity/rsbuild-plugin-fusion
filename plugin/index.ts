@@ -1,12 +1,15 @@
 import type { RsbuildPlugin } from "@rsbuild/core"
 import MagicString from "magic-string"
 import { existsSync } from "node:fs"
-import { mkdir, readdir, readFile, stat, writeFile } from "node:fs/promises"
+import { mkdir, readdir, stat } from "node:fs/promises"
 import { fileURLToPath } from "node:url"
-import { gzipSync } from "node:zlib"
-import { dirname, extname, join, relative, resolve } from "pathe"
-import { runtime } from "std-env"
+import { dirname, extname, join, relative, resolve } from "node:path"
 import { type RpcLoaderOptions } from "./rpcMacroLoader"
+
+type SafeRequest = Omit<Request, "formData"> & {
+	formData(): Promise<FormData>
+}
+
 
 /**
  * Module-scoped map registry tracks live actions during development
@@ -29,11 +32,10 @@ export type ServerAction = <Args extends any[], Return>(
 
 export let useServerAction$: ServerAction
 
-
+//index.ts
 export const fusionPlugin = (): RsbuildPlugin => ({
 	name: "fusion",
 	setup(api) {
-		
 		api.modifyRspackConfig((config, {env}) => {
 			const isBuild = env === "production"
 			
@@ -63,7 +65,7 @@ export const fusionPlugin = (): RsbuildPlugin => ({
 			server.middlewares.use(async (req, res, next) => {
 				const url = new URL(req.url || "/", `http://${req.headers.host}`), pathname = url.pathname
 				// Intercept calls to the hidden api endpoint.
-				if(pathname.startsWith("/api/rpc")) {
+				if(pathname.startsWith("/fusion/rpc")) {
 					// Extract the id of the rpc function
 					const id = url.searchParams?.get("id")
 					
@@ -74,15 +76,29 @@ export const fusionPlugin = (): RsbuildPlugin => ({
 					}
 					
 					try {
+						// Check if the HTTP method allows a request body (GET/HEAD will throw if body is present)
+						const hasBody = !["GET", "HEAD"].includes(req.method || "")
+						
+						// Build ReadableStream directly from the Node request iterator
+						const webBody = hasBody
+						                ? new ReadableStream({
+								async start(controller) {
+									for await (const chunk of req) {
+										controller.enqueue(new Uint8Array(chunk))
+									}
+									controller.close()
+								},
+							}) : undefined
+						
 						// Map raw Node message sockets directly to native Request engines to extract Form Data streams
 						const protocol = req.headers["x-forwarded-proto"] || "http"
 						const webReq = new Request(new URL(req.url || "", `${protocol}://${req.headers.host}`), {
 							method: req.method,
 							headers: req.headers as Record<string, string>,
-							body: req as any,
+							body: hasBody ? webBody : undefined,
 						})
 						
-						const formData: FormData = await webReq.formData()
+						const formData: FormData = await (webReq as SafeRequest).formData()
 						const args: any[] = []
 						
 						let i = 0
@@ -118,18 +134,15 @@ export const fusionPlugin = (): RsbuildPlugin => ({
 		})
 		
 		api.onCloseBuild(async () => {
-			if(runtime === "node") {
-				console.info("Building with Node")
-			}
-			else {
-				console.info("Building with Bun")
-			}
-			
 			if(api.context.action !== "build") {
 				return
 			}
 			const outDirPath = resolve(api.context.rootPath, api.context.distPath)
-			const clientAssets: Record<string, {content: string; isGzip: boolean}> = {}
+			const clientAssets: Record<
+				string,
+				| {content: string; isGzip: true}
+				| {bytes: number[]; isGzip: false}
+			> = {}
 			
 			const scrape = async (dir: string) => {
 				if(!existsSync(dir)) {
@@ -158,21 +171,17 @@ export const fusionPlugin = (): RsbuildPlugin => ({
 						const url = "/" + relative(outDirPath, filePath).replace(/\\/g, "/"), ext = extname(f)
 						const isBin = [".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico", ".woff", ".woff2"].includes(ext)
 						
-						const rawContent = runtime === "node"
-						                   ? await readFile(filePath, "utf-8")
-						                   : await Bun.file(filePath).text()
-						
 						if(!isBin) {
-							const compressed = runtime === "node"
-							                   ? gzipSync(rawContent).toBase64({alphabet: "base64"})
-							                   : Bun.gzipSync(rawContent).toBase64({alphabet: "base64"})
+							const rawContent = await Bun.file(filePath).text()
 							
-							clientAssets[url] = runtime === "node"
-							                    ? {content: compressed, isGzip: true}
-							                    : {content: compressed.toString(), isGzip: true}
+							const base64Content = Bun.gzipSync(rawContent).toBase64({alphabet: "base64"}).toString()
+							
+							clientAssets[url] = {content: base64Content, isGzip: true}
 						}
 						else {
-							clientAssets[url] = {content: rawContent.toString(), isGzip: false}
+							const byteArray = Array.from(new Uint8Array(await Bun.file(filePath).arrayBuffer()))
+							
+							clientAssets[url] = {bytes: byteArray, isGzip: false}
 						}
 					}
 				}
@@ -190,20 +199,15 @@ export const fusionPlugin = (): RsbuildPlugin => ({
 			for(const [id, src] of productionRpcManifest.entries()) {
 				const rpcFileName = `${id}.mjs`
 				const rpcFilePath = resolve(rpcOutputDir, rpcFileName)
-				const fileContent = `export default ${src};`
+				const fileContent = `export default ${src}`
 				
-				if(runtime === "node") {
-					await writeFile(rpcFilePath, fileContent, "utf-8")
-				}
-				else {
-					await Bun.write(rpcFilePath, fileContent)
-				}
+				await Bun.write(rpcFilePath, fileContent)
 				
 				// Inject a static relative import block into the main server file
 				rpcLines.append(`import rpc_${id} from "./rpc/${rpcFileName}"\n__rpcFunctions.set("${id}", rpc_${id})\n`)
 			}
 			
-			const filename = runtime === "node" ? fileURLToPath(import.meta.url) : Bun.fileURLToPath(import.meta.url)
+			const filename = Bun.fileURLToPath(import.meta.url)
 			const localDirectory = dirname(filename)
 			
 			const absoluteServerCodePath = resolve(localDirectory, "serverEngine.js")
@@ -213,25 +217,21 @@ export const fusionPlugin = (): RsbuildPlugin => ({
 				process.exit(1)
 			}
 			
-			const serverEngineCode = runtime === "node"
-			                         ? await readFile(absoluteServerCodePath, "utf-8")
-			                         : await Bun.file(absoluteServerCodePath).text()
-			
+			const serverEngineCode = await Bun.file(absoluteServerCodePath).text()
 			const msServerCode = new MagicString(serverEngineCode)
 			
-			const assetToken = `/*!__RPC_FUNCTIONS_INJECTION_TOKEN__*/`
-			const rpcToken = `/*!__CLIENT_ASSETS_INJECTION_TOKEN__*/`
-			
-			const assetIdx = serverEngineCode.indexOf(assetToken)
+			const rpcToken = `/*!__RPC_FUNCTIONS_INJECTION_TOKEN__*/`
+			const assetToken = `/*!__CLIENT_ASSETS_INJECTION_TOKEN__*/`
 			
 			const rpcIdx = serverEngineCode.indexOf(rpcToken)
+			const assetIdx = serverEngineCode.indexOf(assetToken)
 			
 			if(assetIdx !== -1) {
 				const assetPayloadString = `\nclientAssets = ${JSON.stringify(clientAssets, null, 2)}\n`
 				msServerCode.replace(assetToken, assetPayloadString)
 			}
 			else {
-				console.warn("[Plugin] Warning: Asset injection token placeholder missing in serverEngine")
+				console.error("[Plugin] Error: CLIENT_ASSETS injection token placeholder missing in serverEngine")
 				process.exit(1)
 			}
 			
@@ -239,19 +239,13 @@ export const fusionPlugin = (): RsbuildPlugin => ({
 				msServerCode.replace(rpcToken, rpcLines.toString())
 			}
 			else {
-				console.warn("[Plugin] Warning: RPC injection token placeholder missing in serverEngine")
+				console.error("[Plugin] Error: RPC injection token placeholder missing in serverEngine")
 				process.exit(1)
 			}
 			
 			const indexFile = resolve(outDirPath, "index.mjs")
 			
-			if(runtime === "node") {
-				await writeFile(indexFile, msServerCode.toString(), "utf-8")
-			}
-			else {
-				await Bun.write(indexFile, msServerCode.toString())
-			}
-			
+			await Bun.write(indexFile, msServerCode.toString())
 		})
 	},
 })

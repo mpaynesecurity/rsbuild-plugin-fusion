@@ -1,47 +1,51 @@
 {
 	"type": "module",
-	"workspaces": [
-		"plugin",
-		"sandbox"
-	],
-	"catalog": {
-		"@rsbuild/core": "^2.1.8",
-		"@rsbuild/plugin-babel": "^2.0.1",
-		"@rsbuild/plugin-solid": "^1.2.2",
-		"@rsbuild/plugin-tailwindcss": "^2.0.3",
-		"@rsdoctor/rspack-plugin": "^1.6.1",
-		"@rslib/core": "^0.23.2",
-		"@solidjs/router": "^0.16.1",
-		"solid-js": "^1.9.14",
-		"@types/bun": "^1.3.14",
-		"@types/node": "^26.1.1",
-		"cross-env": "^10.1.0",
-		"magic-string": "^1.1.0",
-		"pathe": "^2.0.3",
-		"std-env": "^4.2.0",
-		"typescript": "^6.0.3"
+	"workspaces": {
+		"packages": [
+			"plugin",
+			"sandbox"
+		],
+		"catalog": {
+			"@rsbuild/core": "^2.2.1",
+			"@rsbuild/plugin-babel": "^2.1.0",
+			"@rsbuild/plugin-solid": "^1.2.2",
+			"@rsbuild/plugin-tailwindcss": "^2.0.3",
+			"@rsdoctor/rspack-plugin": "^1.6.1",
+			"@rslib/core": "^0.23.2",
+			"@solidjs/router": "^0.16.1",
+			"solid-js": "^1.9.14",
+			"@types/bun": "^1.3.14",
+			"@types/node": "^26.1.1",
+			"cross-env": "^10.1.0",
+			"typescript": "^6.0.3"
+		}
 	},
 	"scripts": {
-		"clean:deps": "rm bun.lock && rm -rf node_modules && bun run --filter '*' clean",
-		"sandbox:dev:bun": "bun --bun --watch rsbuild",
+		"clean:deps": "rm bun.lock && rm -rf node_modules && bun run --filter '*' clean:node",
+		"clean:dist": "rm -rf dist/; bun run --filter '*' clean:dist",
+		"sandbox:dev:bun": "bun --bun rsbuild",
 		"sandbox:dev:node": "rsbuild",
 		"sandbox:build": "bun --bun rsbuild build",
-		"sandbox:build:rsdoctor": "RSDOCTOR=true bun --bun rsbuild build",
-		"plugin:build": "bun run --elide-lines=0 --filter '*/fusion' build && bun i",
-		"plugin:build:rsdoctor": "bun run --elide-lines=0 --filter '*/fusion' build:rsdoctor",
-		"preview": "bun --bun dist/index.mjs"
+		"sandbox:build:rsdoctor": "cross-env RSDOCTOR=true bun --bun rsbuild build",
+		"plugin:build": "bun run --filter '*/rsbuild-plugin-fusion' build && bun i",
+		"plugin:build:rsdoctor": "bun run --filter '*/fusion' build:rsdoctor",
+		"preview:build": "bun run plugin:build && bun run sandbox:build && bun run preview",
+		"preview": "bun dist/index.mjs"
 	},
 	"dependencies": {
-		"@mpaynesecurity/fusion": "workspace:*"
+		"@mpaynesecurity/rsbuild-plugin-fusion": "workspace:*"
 	},
 	"devDependencies": {
 		"@types/node": "catalog:",
 		"@types/bun": "catalog:",
 		"typescript": "catalog:",
-		"@rsbuild/core": "^2.1.8",
-		"@rsbuild/plugin-babel": "^2.0.1",
-		"@rsbuild/plugin-solid": "^1.2.2",
-		"@rsbuild/plugin-tailwindcss": "^2.0.3",
-		"std-env": "catalog:"
+		"@rsbuild/core": "catalog:",
+		"@rsbuild/plugin-babel": "catalog:",
+		"@rsbuild/plugin-solid": "catalog:",
+		"@rsbuild/plugin-tailwindcss": "catalog:"
+	},
+	"peerDependencies": {
+		"@solidjs/router": "^0.16.1",
+		"solid-js": "^1.9.14"
 	}
 }
