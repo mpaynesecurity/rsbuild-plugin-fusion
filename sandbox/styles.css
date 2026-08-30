@@ -42,3 +42,11 @@ body {
     --color-dark-header: oklch(0.238 0.006 258.363);
     --color-card-body: oklch(0.252 0.014 267.008)
 }
+
+/*nav a[aria-current="page"] {*/
+/*    @apply bg-indigo-600 px-5 py-2;*/
+/*}*/
+
+/*nav a[data-active] {*/
+/*    @apply text-gray-300 hover:bg-gray-700 active:bg-indigo-800 rounded-md font-medium transition-colors flex-1 px-5 py-2*/
+/*}*/
