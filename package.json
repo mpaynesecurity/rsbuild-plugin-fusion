@@ -7,45 +7,48 @@
 		],
 		"catalog": {
 			"@rsbuild/core": "^2.2.1",
-			"@rsbuild/plugin-babel": "^2.1.0",
+			"@rsbuild/plugin-babel": "^2.0.1",
 			"@rsbuild/plugin-solid": "^1.2.2",
 			"@rsbuild/plugin-tailwindcss": "^2.0.3",
 			"@rsdoctor/rspack-plugin": "^1.6.1",
 			"@rslib/core": "^0.23.2",
-			"@solidjs/router": "^0.16.1",
-			"solid-js": "^1.9.14",
+			"@solidjs/router": "^1.0.0",
+			"solid-js": "^1.9.15",
 			"@types/bun": "^1.3.14",
 			"@types/node": "^26.1.1",
 			"cross-env": "^10.1.0",
-			"typescript": "^6.0.3"
+			"typescript": "6.0.3"
 		}
 	},
 	"scripts": {
 		"clean:deps": "rm bun.lock && rm -rf node_modules && bun run --filter '*' clean:node",
 		"clean:dist": "rm -rf dist/; bun run --filter '*' clean:dist",
-		"sandbox:dev:bun": "bun --bun rsbuild",
-		"sandbox:dev:node": "rsbuild",
+		"docs:build": "bun run --elide-lines=0 --filter '*/rsbuild-plugin-fusion' build:docs",
+		"plugin:build": "bun run --elide-lines=0 --filter '*/rsbuild-plugin-fusion' build && bun i",
+		"plugin:build:rsdoctor": "bun run --filter '*/rsbuild-plugin-fusion' build:rsdoctor",
+		"preview": "bun dist/index.mjs",
+		"preview:build": "bun run plugin:build && bun run sandbox:build && bun run preview",
 		"sandbox:build": "bun --bun rsbuild build",
 		"sandbox:build:rsdoctor": "cross-env RSDOCTOR=true bun --bun rsbuild build",
-		"plugin:build": "bun run --filter '*/rsbuild-plugin-fusion' build && bun i",
-		"plugin:build:rsdoctor": "bun run --filter '*/fusion' build:rsdoctor",
-		"preview:build": "bun run plugin:build && bun run sandbox:build && bun run preview",
-		"preview": "bun dist/index.mjs"
+		"sandbox:dev": "bun --bun rsbuild"
 	},
 	"dependencies": {
 		"@mpaynesecurity/rsbuild-plugin-fusion": "workspace:*"
 	},
 	"devDependencies": {
-		"@types/node": "catalog:",
-		"@types/bun": "catalog:",
-		"typescript": "catalog:",
 		"@rsbuild/core": "catalog:",
 		"@rsbuild/plugin-babel": "catalog:",
 		"@rsbuild/plugin-solid": "catalog:",
-		"@rsbuild/plugin-tailwindcss": "catalog:"
+		"@rsbuild/plugin-tailwindcss": "catalog:",
+		"@rsdoctor/rspack-plugin": "^1.6.3",
+		"@types/bun": "catalog:",
+		"@types/node": "catalog:",
+		"changelogen": "^0.6.2",
+		"cross-env": "catalog:",
+		"typescript": "catalog:"
 	},
 	"peerDependencies": {
-		"@solidjs/router": "^0.16.1",
-		"solid-js": "^1.9.14"
+		"@solidjs/router": "catalog:",
+		"solid-js": "catalog:"
 	}
 }

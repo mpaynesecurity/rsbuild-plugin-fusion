@@ -1,8 +1,8 @@
 import { fusionPlugin } from "@mpaynesecurity/rsbuild-plugin-fusion"
 import { defineConfig } from "@rsbuild/core"
-import { pluginBabel } from "@rsbuild/plugin-babel"
 import { pluginSolid } from "@rsbuild/plugin-solid"
 import { pluginTailwindcss } from "@rsbuild/plugin-tailwindcss"
+import { pluginBabel } from "@rsbuild/plugin-babel"
 
 export default defineConfig({
 	dev: {
@@ -17,7 +17,8 @@ export default defineConfig({
 		overrideBrowserslist: ["last 2 versions"],
 	},
 	splitChunks: {
-		preset: "default",
+		preset: "per-package", // Splits node_modules into clean, isolated individual scripts
+		chunks: "all",
 	},
 	performance: {
 		removeConsole: true,
@@ -26,7 +27,6 @@ export default defineConfig({
 		fusionPlugin(),
 		pluginBabel({
 			include: /\.(?:jsx|tsx)$/,
-			parallel: true,
 		}),
 		pluginSolid(),
 		pluginTailwindcss(),

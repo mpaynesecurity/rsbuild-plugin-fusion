@@ -10,3 +10,4 @@ dist/
 # IDE
 .idea
 /.env
+bunfig.toml
