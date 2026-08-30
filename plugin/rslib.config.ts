@@ -17,7 +17,7 @@ export default defineConfig({
 		cleanDistPath: true,
 		// Do not bundle dev dependencies
 		externals: [...Object.keys(pkg.devDependencies)],
-		// Inlines legal notices; stops *.LICENSE.txt sidecars
+		// Stops *.LICENSE.txt sidecars
 		legalComments: "inline",
 		module: true,
 		sourceMap: false,
@@ -44,24 +44,26 @@ export default defineConfig({
 		entry: {
 			"index": "index.ts",
 			"rpcMacroLoader": "rpcMacroLoader.ts",
-			"serverEngine": "serverEngine.ts",
+			"templates/serverEngine": "templates/serverEngine.ts",
 		},
 	},
 	tools: {
 		rspack: {
 			stats: {
 				errors: true,
-				errorDetails:
-					true,
-				errorStack:
-					false,
-				env:
-					true,
-				runtime:
-					true,
+				errorDetails: true,
+				errorStack: false,
+				env: true,
+				runtime: true,
 			},
 			output: {
 				asyncChunks: true,
+			},
+		},
+		swc: {
+			collectTypeScriptInfo: {
+				exportedEnum: true,
+				typeExports: true,
 			},
 		},
 	},

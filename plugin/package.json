@@ -11,7 +11,7 @@
 	"types": "./dist/index.d.ts",
 	"repository": {
 		"type": "git",
-		"url": "payneusmc07/rsbuild-plugin-fusion",
+		"url": "https://payneusmc07/rsbuild-plugin-fusion",
 		"directory": "plugin"
 	},
 	"publishConfig": {
