@@ -14,31 +14,33 @@
 			"@rslib/core": "^0.23.2",
 			"@solidjs/router": "^1.0.0",
 			"solid-js": "^1.9.15",
-			"@types/bun": "^1.3.14",
+			"@types/bun": "^1.4.2",
 			"@types/node": "^26.1.1",
 			"cross-env": "^10.1.0",
-			"typescript": "6.0.3"
+			"typescript": "^7.0.2"
 		}
 	},
 	"scripts": {
 		"clean:deps": "rm bun.lock && rm -rf node_modules && bun run --filter '*' clean:node",
-		"clean:dist": "rm -rf dist/; bun run --filter '*' clean:dist",
-		"docs:build": "bun run --elide-lines=0 --filter '*/rsbuild-plugin-fusion' build:docs",
+		"clean:dist": "rm -rf dist/ && bun run --filter '*' clean:dist",
+		"changelog": "changelogen --output",
 		"plugin:build": "bun run --elide-lines=0 --filter '*/rsbuild-plugin-fusion' build && bun i",
 		"plugin:build:rsdoctor": "bun run --filter '*/rsbuild-plugin-fusion' build:rsdoctor",
+		"plugin:publish:local": "bun run --elide-lines=0 --filter '*/rsbuild-plugin-fusion' publish:local",
+		"plugin:publish:git": "bun run --elide-lines=0 --filter '*/rsbuild-plugin-fusion' publish:git",
+		"plugin:publish:npm": "bun run --elide-lines=0 --filter '*/rsbuild-plugin-fusion' publish:npm",
 		"preview": "bun dist/index.mjs",
-		"preview:build": "bun run plugin:build && bun run sandbox:build && bun run preview",
+		"preview:build": "rm -rf dist && bun run plugin:build && bun run sandbox:build && bun run preview",
 		"sandbox:build": "bun --bun rsbuild build",
 		"sandbox:build:rsdoctor": "cross-env RSDOCTOR=true bun --bun rsbuild build",
 		"sandbox:dev": "bun --bun rsbuild"
 	},
 	"dependencies": {
-		"@mpaynesecurity/rsbuild-plugin-fusion": "workspace:*"
+		"@mpaynesecurity/rsbuild-plugin-fusion": "1.0.0"
 	},
 	"devDependencies": {
 		"@rsbuild/core": "catalog:",
 		"@rsbuild/plugin-babel": "catalog:",
-		"@rsbuild/plugin-solid": "catalog:",
 		"@rsbuild/plugin-tailwindcss": "catalog:",
 		"@rsdoctor/rspack-plugin": "^1.6.3",
 		"@types/bun": "catalog:",
@@ -49,6 +51,7 @@
 	},
 	"peerDependencies": {
 		"@solidjs/router": "catalog:",
-		"solid-js": "catalog:"
+		"solid-js": "catalog:",
+		"@rsbuild/plugin-solid": "catalog:"
 	}
 }

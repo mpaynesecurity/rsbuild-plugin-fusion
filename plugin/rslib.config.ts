@@ -4,12 +4,16 @@ import * as pkg from "./package.json" with { type: "json" }
 export default defineConfig({
 	lib: [
 		{
-			format: "esm",
-			syntax: "esnext",
-			id: "fusion",
 			dts: {
-				isolated: true,
+				//isolated: true,
+				autoExtension: true,
 			},
+			splitChunks: {
+				preset: "default",
+			},
+			format: "esm",
+			id: "fusion",
+			syntax: "esnext",
 		},
 	],
 	output: {
@@ -25,6 +29,7 @@ export default defineConfig({
 		minify: {
 			jsOptions: {
 				minimizerOptions: {
+					module: true,
 					mangle: false,
 					minify: true,
 					compress: {
@@ -43,7 +48,9 @@ export default defineConfig({
 	source: {
 		entry: {
 			"index": "index.ts",
-			"rpcMacroLoader": "rpcMacroLoader.ts",
+			"loaders/rpcMacroLoader": "loaders/rpcMacroLoader.ts",
+			"types/index": "types/index.ts",
+			"helpers/index": "helpers/index.ts",
 			"templates/serverEngine": "templates/serverEngine.ts",
 		},
 	},
@@ -58,6 +65,7 @@ export default defineConfig({
 			},
 			output: {
 				asyncChunks: true,
+				module: true,
 			},
 		},
 		swc: {

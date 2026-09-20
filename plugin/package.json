@@ -2,32 +2,53 @@
 	"name": "@mpaynesecurity/rsbuild-plugin-fusion",
 	"version": "1.0.0",
 	"type": "module",
+	"license": "MIT",
+	"description": "Turns any Rsbuild SPA into a lightweight fullstack framework",
+	"keywords": [
+		"rsbuild",
+		"server functions",
+		"server actions",
+		"full stack"
+	],
+	"funding": {
+		"type": "ko-fi",
+		"url": "https://ko-fi.com/mpaynesecurity"
+	},
 	"exports": {
 		".": {
 			"types": "./dist/index.d.ts",
 			"import": "./dist/index.js"
+		},
+		"./types": {
+			"types": "./dist/types/index.d.ts",
+			"import": "./dist/types/index.js"
 		}
 	},
-	"types": "./dist/index.d.ts",
 	"repository": {
 		"type": "git",
-		"url": "https://payneusmc07/rsbuild-plugin-fusion",
+		"url": "https://github.com/mpaynesecurity/rsbuild-plugin-fusion.git",
 		"directory": "plugin"
 	},
 	"publishConfig": {
 		"access": "public"
 	},
+	"files": [
+		"dist",
+		"README.md"
+	],
 	"scripts": {
-		"build": "cross-env NODE_ENV=development rslib",
+		"build": "rslib",
 		"build:rsdoctor": "cross-env RSDOCTOR=true rslib",
 		"clean:node": "rm -rf node_modules",
 		"clean:dist": "rm -rf dist",
-		"publish:local": "bun publish --registry https://registry.mpaynesecurity.net"
+		"publish:local": "npm publish --registry https://registry.mpaynesecurity.net",
+		"unpublish:local": "npm unpublish @mpaynesecurity/rsbuild-plugin-fusion --registry https://registry.mpaynesecurity.net --force",
+		"publish:git": "bun publish . --registry https://npm.pkg.github.com --no-workspaces"
 	},
 	"dependencies": {
 		"oxc-walker": "^1.1.1",
-		"oxc-parser": "^0.146.0",
-		"magic-string": "^1.2.2"
+		"oxc-parser": "^0.150.0",
+		"magic-string": "^1.4.1"
 	},
 	"devDependencies": {
 		"@rsdoctor/rspack-plugin": "catalog:",
@@ -36,6 +57,11 @@
 		"@types/bun": "catalog:",
 		"@types/node": "catalog:",
 		"cross-env": "catalog:",
+		"typescript": "catalog:"
+	},
+	"peerDependencies": {
+		"@types/bun": "catalog:",
+		"@types/node": "catalog:",
 		"typescript": "catalog:"
 	}
 }

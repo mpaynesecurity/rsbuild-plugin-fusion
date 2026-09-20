@@ -8,13 +8,11 @@
 ![GitHub Sponsors](https://img.shields.io/github/sponsors/mpaynesecurity)
 ![GitHub Repo stars](https://img.shields.io/github/stars/payneusmc07/rsbuild-plugin-fusion)
 
-> [!IMPORTANT]
-> Plugin is optimized for and only works with the Bun runtime.
+**Important:**`Plugin is optimized for and only works with the Bun runtime.`
 
-> [!IMPORTANT]
-> Plugin is built on WinterCG-compliant web standards (Request, Response, and standard ES modules).
+**Important:**`Plugin is built on WinterCG-compliant web standards (Request, Response, and standard ES modules).
 If your cloud provider or runtime does not support standard web primitives, that is a limitation of the provider, not
-this tool.
+this tool.`
 
 ## Getting Started
 

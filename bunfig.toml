@@ -3,3 +3,10 @@ linker = "isolated"
 
 [console]
 depth = 15
+
+#[install.scopes]
+#"@mpaynesecurity" = {
+#	url = "$REGISTRY",
+#	username = "$REGISTRY_USER",
+#	password = "$REGISTRY_PASSWORD"
+#}

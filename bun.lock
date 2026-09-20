@@ -4,7 +4,7 @@
   "workspaces": {
     "": {
       "dependencies": {
-        "@mpaynesecurity/rsbuild-plugin-fusion": "1.1.0",
+        "@mpaynesecurity/rsbuild-plugin-fusion": "1.0.0",
       },
       "devDependencies": {
         "@rsbuild/core": "catalog:",
@@ -25,7 +25,7 @@
     },
     "plugin": {
       "name": "@mpaynesecurity/rsbuild-plugin-fusion",
-      "version": "1.1.0",
+      "version": "1.0.0",
       "dependencies": {
         "magic-string": "^1.4.1",
         "oxc-parser": "^0.150.0",
@@ -50,7 +50,7 @@
       "name": "sandbox",
       "version": "0.0.0",
       "dependencies": {
-        "@mpaynesecurity/rsbuild-plugin-fusion": "1.1.0",
+        "@mpaynesecurity/rsbuild-plugin-fusion": "1.0.0",
       },
       "devDependencies": {
         "@types/bun": "catalog:",

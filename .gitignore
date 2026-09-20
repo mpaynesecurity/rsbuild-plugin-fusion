@@ -10,4 +10,5 @@ dist/
 # IDE
 .idea
 /.env
-bunfig.toml
+!/plugin/
+/bunfig.toml

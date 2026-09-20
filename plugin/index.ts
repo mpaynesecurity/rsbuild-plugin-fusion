@@ -1,47 +1,72 @@
+/**
+ * ## How it works
+ * ### The Macro Boundary:
+ * #### api.modifyRspackConfig
+ *
+ * Fusion uses a custom `Rspack` loader to target code structures wrapped in`useServer$()`. In the browser, it drops in a
+ * standard network `fetch()`. On the server, it captures the raw string code expression to register it into the execution
+ * map.
+ *
+ * ### Dual-Context Development Gateway:
+ * #### api.onBeforeStartDevServer
+ *
+ * During development, Fusion routes requests through a local module-isolated tracking map (`localRpcFunctions`). When a
+ * network call hits `/fusion/rpc`, it uses standard Node.js structures to run the function in-memory inside Rsbuild's dev
+ * environment.
+ *
+ * ### The Production Build:
+ * #### api.onCloseBuild
+ * 1. Loop through the compiled frontend asset folder (s)`dist/static/(css/js)`, pack them into compressed base64 string,
+ *    and drop them into the `clientAssets` object.
+ *
+ *
+ * 2. Loop through the extracted the server actions, and them to the `rpcFunctions ` map and place them into the
+ *    `dist/rpc` folder where they are referenced by `dist/index.mjs`
+ *
+ * ## Fusion vs. Meta-Frameworks
+ * #### 1. Handling of browser and server code
+ *
+ * Meta-frameworks treat the browser build and server build as completely separate targets that require a heavy bridge to
+ * talk to each other. Fusion blends both code bases together and combines them into a single build process with minimal
+ * runtime dependencies.
+ *
+ * #### 2. Elimination of Code-Splitting and Chunks Manifests
+ *
+ * Meta-frameworks have to generate dozens of sliced chunks and maintain a massive JSON layout file to map client-side
+ * network stubs back to server-side files. Fusion cuts out that entire layer because every image, script, stylesheet, and
+ * server action lives inside the same single file memory space.
+ *
+ * #### 3. Single-Pass High Performance Routing
+ *
+ * Instead of spinning up heavy application routing instances or framework controllers, Fusion matches assets out of a
+ * native JavaScript object (`ASSETS`) and serves them directly out of RAM. Text assets are pre-gzipped during compilation,
+ * meaning the server doesn't waste CPU cycles compressing assets on the fly.
+ *
+ * #### 4. Safe Server Isolation and Closure Execution
+ *
+ * Fusion's utilization of explicit dynamic imports inside its `useServerAction$` macro allows for full access to database
+ * modules, file systems, and server utilities, but ensures their code is never leaked into the browser bundle. The browser
+ * only receives a `fetch()` call, giving absolute isolation without complex compiler layers.
+ *
+ * @module fusionPlugin
+ */
+
 import { type RsbuildPlugin } from "@rsbuild/core"
 import MagicString from "magic-string"
 import { existsSync } from "node:fs"
-import { mkdir, readdir, stat } from "node:fs/promises"
+import { mkdir, readdir } from "node:fs/promises"
 import { type IncomingMessage, type ServerResponse } from "node:http"
-import { dirname, extname, join, relative, resolve } from "node:path"
-import { fileURLToPath } from "node:url"
-import { type RpcLoaderOptions } from "./rpcMacroLoader"
-
-/**
- * Modifies the standard JavaScript/TypeScript Request object and ensures that calling .formData() always
- * returns a valid FormData object wrapped in a Promise, eliminating the default TypeScript possibility that
- * it might return unknown or cause type errors.
- */
-type SafeRequest = Omit<Request, "formData"> & {
-	formData(): Promise<FormData>
-}
-
-/**
- * @type {(err?: any) => void}
- */
-type NextFunction = (err?: any) => void
-
-/**
- * Module-scoped map registry tracks live actions during development
- *
- * @type {Map<string, Function>}
- */
-const localRpcFunctions: Map<string, Function> = new Map<string, Function>()
-
-/**
- * Registry map which holds the compiled production rpc function calls
- *
- * @type {Map<string, string>}
- */
-const productionRpcManifest: Map<string, string> = new Map<string, string>()
-
-/**
- * Define the "contract" for what a ServerAction call looks like
- */
-export type ServerAction = <Args extends any[], Return>(
-	fn: (...args: Args) => Return | Promise<Return>,
-) => (...args: Args) => Promise<Awaited<Return>>
-
+import { dirname, extname, join, resolve } from "node:path"
+import { normalizePath } from "./helpers"
+import {
+	clientAssets,
+	localRpcFunctions,
+	productionRpcManifest,
+	type NextFunction,
+	type SafeRequest,
+	type ServerAction,
+	type RpcLoaderOptions,
+} from "./types"
 
 /**
  * @example
@@ -52,13 +77,11 @@ export type ServerAction = <Args extends any[], Return>(
  * @example
  * ### Improper Variable Scoping
  * ```tsx
- * import { useServerAction$ } from "@mpaynesecurity/fusion"
- 
  * // Ensure variables are declared within the closure!
  * const secretSalt = "xyz123"
  *
  * const myAction = serverAction$(async () => {
- * 	// 💥 ReferenceError: secretSalt is not defined since the variable is outside the closure's scope
+ * 	// ReferenceError: secretSalt is not defined since the variable is outside the closure's scope
  * 	return doSomething(secretSalt)
  * })
  * ```
@@ -73,8 +96,6 @@ export type ServerAction = <Args extends any[], Return>(
  * 3. Standard arrays
  
  * ```tsx
- * import { useServerAction$ } from "@mpaynesecurity/fusion"
- *
  * const readCustomDir = useServerAction$(async (subFolder: string) => {
  * 	const os = await import("node:os")
  * 	const path = await import("node:path")
@@ -88,8 +109,6 @@ export type ServerAction = <Args extends any[], Return>(
  * Note: Node’s native Request constructor has an internal threshold for incoming form streams depending on your precise runtime
  * environment version flags.
  * ```tsx
- * import { useServerAction$ } from "@mpaynesecurity/fusion"
- *
  * export const uploadTextFile = useServerAction$(async (file: File) => {
  * 	// Read text files instantly
  * 	const textContent = await file.text()
@@ -105,10 +124,10 @@ export type ServerAction = <Args extends any[], Return>(
  */
 export let useServerAction$: ServerAction
 
-/**
- *
- * @returns {RsbuildPlugin}
- */
+const filename = Bun.fileURLToPath(import.meta.url)
+
+const localDirectory = dirname(filename)
+
 export const fusionPlugin = (): RsbuildPlugin => ({
 	name: "fusion",
 	setup(api) {
@@ -125,7 +144,7 @@ export const fusionPlugin = (): RsbuildPlugin => ({
 			}
 			
 			// Construct a url path to the rpcMacroLoader file
-			const rpcMacroLoaderFile = fileURLToPath(new URL("./rpcMacroLoader.js", import.meta.url))
+			const rpcMacroLoaderFile = resolve(localDirectory, "loaders", "rpcMacroLoader.js")
 			
 			if(!rpcMacroLoaderFile) {
 				console.error(`${rpcMacroLoaderFile} was not found`)
@@ -134,6 +153,7 @@ export const fusionPlugin = (): RsbuildPlugin => ({
 			
 			config.module.rules.push({
 				test: /\.(tsx|jsx|svelte|vue|ts)$/,
+				exclude: "node_modules",
 				use: [
 					{
 						loader: rpcMacroLoaderFile,
@@ -144,7 +164,6 @@ export const fusionPlugin = (): RsbuildPlugin => ({
 		})
 		
 		api.onBeforeStartDevServer(({server}) => {
-			
 			server.middlewares.use(async (req: IncomingMessage, res: ServerResponse<IncomingMessage>, next: NextFunction) => {
 				const url = new URL(req.url || "/", `http://${req.headers.host}`), pathname = url.pathname
 				// Intercept calls to the hidden api endpoint.
@@ -152,7 +171,7 @@ export const fusionPlugin = (): RsbuildPlugin => ({
 					// Extract the id of the rpc function
 					const id = url.searchParams?.get("id")
 					
-					// Return an HTTP not found code if the rpc function's id is not in the set.
+					// Return an HTTP not found code if the rpc function's id is not in the map.
 					if(!id || !localRpcFunctions.has(id)) {
 						res.statusCode = 404
 						return res.end("RPC function ID not found")
@@ -173,13 +192,15 @@ export const fusionPlugin = (): RsbuildPlugin => ({
 								},
 							}) : undefined
 						
-						// Map raw Node message sockets directly to native Request engines to extract Form Data streams
+						// Map raw Node message sockets directly to native request engines to extract Form Data streams
 						const protocol = req.headers["x-forwarded-proto"] || "http"
 						
 						const webReq = new Request(new URL(req.url || "", `${protocol}://${req.headers.host}`), {
 							method: req.method,
 							headers: req.headers as Record<string, string>,
 							body: hasBody ? webBody : undefined,
+							// @ts-ignore - Explicitly allow duplex connection for standard streaming targets. Needed for Node versions requiring duplex flag for streaming bodies
+							duplex: webBody ? "half" : undefined,
 						})
 						
 						// Extract the forData object from the incoming request
@@ -248,63 +269,57 @@ export const fusionPlugin = (): RsbuildPlugin => ({
 		})
 		
 		api.onCloseBuild(async () => {
+			// Return if the "command" is not "build"
 			if(api.context.action !== "build") {
 				return
 			}
 			const outDirPath = resolve(api.context.rootPath, api.context.distPath)
-			const clientAssets: Record<
-				string,
-				| {content: string; isGzip: true}
-				| {bytes: number[]; isGzip: false}
-			> = {}
 			
-			const scrape = async (dir: string) => {
-				if(!existsSync(dir)) {
-					return
-				}
+			if(existsSync(outDirPath)) {
+				const entries = await readdir(outDirPath, {recursive: true, withFileTypes: true})
 				
-				const files = await readdir(dir)
-				
-				for(const f of files) {
-					const filePath = join(dir, f)
-					
-					if(!existsSync(filePath)) {
+				for(const entry of entries) {
+					// skip any subdirectories
+					if(entry.isDirectory()) {
 						continue
 					}
 					
-					const fileStat = await stat(filePath)
+					const f = join(entry.parentPath, entry.name).replace(outDirPath, "").replace(/^[\\/]/, "")
 					
-					if(fileStat.isDirectory()) {
-						// Don't scape rpc directory
-						if(f === "rpc") {
-							continue
-						}
-						await scrape(filePath)
+					// Do not scrape the `rpc` directory
+					if(f.split(/[\\/]/).includes("rpc")) {
+						continue
+					}
+					
+					const filePath = join(outDirPath, f)
+					//const url = "/" + f.replace(/\\/g, "/")
+					
+					const url = `/${normalizePath(f)}`
+					const ext = extname(f)
+					const isBin = [".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico", ".woff", ".woff2"].includes(ext)
+					
+					if(!isBin) {
+						const rawContent = await Bun.file(filePath).text()
+						
+						// Bun.gzipSync returns a Uint8Array. Buffer.from() casts it to convert it to base64.
+						// Byte conversion without buffer allocation leakage.
+						const base64Content = Buffer.from(Bun.gzipSync(Buffer.from(rawContent))).toString("base64")
+						
+						clientAssets[url] = {content: base64Content, isGzip: true}
 					}
 					else {
-						const url = "/" + relative(outDirPath, filePath).replace(/\\/g, "/"), ext = extname(f)
-						const isBin = [".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico", ".woff", ".woff2"].includes(ext)
+						const rawBytes: Uint8Array<ArrayBuffer> = new Uint8Array(await Bun.file(filePath).arrayBuffer())
 						
-						if(!isBin) {
-							const rawContent = await Bun.file(filePath).text()
-							
-							const base64Content = Bun.gzipSync(rawContent).toBase64({alphabet: "base64"}).toString()
-							
-							clientAssets[url] = {content: base64Content, isGzip: true}
-						}
-						else {
-							const byteArray = Array.from(new Uint8Array(await Bun.file(filePath).arrayBuffer()))
-							
-							clientAssets[url] = {bytes: byteArray, isGzip: false}
-						}
+						clientAssets[url] = {bytes: [...rawBytes], isGzip: false}
 					}
 				}
 			}
-			await scrape(outDirPath)
+			
 			const rpcLines = new MagicString("")
+			
 			const rpcOutputDir = resolve(outDirPath, "rpc")
 			
-			// Create the target rpc directory inside the dist folder
+			// Create the `rpc` directory inside the dist folder
 			if(!existsSync(rpcOutputDir)) {
 				await mkdir(rpcOutputDir, {recursive: true})
 			}
@@ -321,9 +336,6 @@ export const fusionPlugin = (): RsbuildPlugin => ({
 				rpcLines.append(`import rpc_${id} from "./rpc/${rpcFileName}"\nrpcFunctions.set("${id}", rpc_${id})\n`)
 			}
 			
-			const filename = Bun.fileURLToPath(import.meta.url)
-			const localDirectory = dirname(filename)
-			
 			const serverEngineTemplate = resolve(localDirectory, "templates", "serverEngine.js")
 			
 			if(!existsSync(serverEngineTemplate)) {
@@ -332,12 +344,14 @@ export const fusionPlugin = (): RsbuildPlugin => ({
 			}
 			
 			const serverEngineCode = await Bun.file(serverEngineTemplate).text()
+			
 			const msServerCode = new MagicString(serverEngineCode)
 			
 			const rpcToken = `/*!__RPC_FUNCTIONS_INJECTION_TOKEN__*/`
 			const assetToken = `/*!__CLIENT_ASSETS_INJECTION_TOKEN__*/`
 			
 			const rpcIdx = serverEngineCode.indexOf(rpcToken)
+			
 			const assetIdx = serverEngineCode.indexOf(assetToken)
 			
 			if(assetIdx !== -1) {
