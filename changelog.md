@@ -1,23 +1,26 @@
-## Changelog
+# Changelog
 
 ### 🚀 Enhancements
 
-- ⚠️ Significant code restructuring and optimization.
-
-- chore: Moved rpcMacroLoader to "templates" folder.
-
-- chore: Stopped using changesets, did not see huge benefit being a solo dev.
-
-- test: Tried to remove string template in index.ts to a template file, but string replacement was not working properly.
-  Further rework required.
-
-- docs: Added detailed jsdoc string to key points in the code base
+- Significant code restructuring and optimization. docs: Added detailed jsdoc string to key points in the code base
   ([06dc78f](https://github.com/payneusmc07/rsbuild-plugin-fusion/commit/06dc78f))
+
+
+- Fully ported code from mpaynesecurity/vite-plugin-fusion. Fixed major parsing bug, passing paramters now work.
+  ([28fafc0](https://github.com/payneusmc07/rsbuild-plugin-fusion/commit/28fafc0))
 
 ### 📖 Documentation
 
-- **changeset:** Feat: Fully ported code from payneusmc07/vite-plugin-fusion. Fixed major parsing bug, passing
-  parameters now works. ([28fafc0](https://github.com/payneusmc07/rsbuild-plugin-fusion/commit/28fafc0))
+- Added detailed jsdoc strings to key points in the code base
+  ([06dc78f](https://github.com/payneusmc07/rsbuild-plugin-fusion/commit/06dc78f))
+
+### Chore
+
+- General cleanup ([c15511c](https://github.com/payneusmc07/rsbuild-plugin-fusion/commit/c15511c))
+- Moved rpcMacroLoader to "templates" folder
+  ([06dc78f](https://github.com/payneusmc07/rsbuild-plugin-fusion/commit/06dc78f))
+- Stopped using changesets, did not see huge benefit being a solo dev
+  ([06dc78f](https://github.com/payneusmc07/rsbuild-plugin-fusion/commit/06dc78f))
 
 ### ✅ Tests
 
@@ -32,5 +35,4 @@
 ### ❤️ Contributors
 
 - Payneusmc07 ([@payneusmc07](https://github.com/payneusmc07))
-
 
