@@ -5,6 +5,7 @@ import { pluginTailwindcss } from "@rsbuild/plugin-tailwindcss"
 import { pluginBabel } from "@rsbuild/plugin-babel"
 
 export default defineConfig({
+	root: ".",
 	dev: {
 		browserLogs: {
 			stackTrace: "none",
@@ -37,7 +38,7 @@ export default defineConfig({
 	},
 	source: {
 		entry: {
-			index: "./sandbox/index.tsx",
+			index: "./index.tsx",
 		},
 	},
 	tools: {

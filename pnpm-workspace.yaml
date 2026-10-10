@@ -1,0 +1,28 @@
+packages:
+  - plugin
+  - sandbox
+
+catalog:
+  "@rsbuild/core": "^2.2.1"
+  "@rsbuild/plugin-babel": "^2.0.1"
+  "@rsbuild/plugin-solid": "^1.2.2"
+  "@rsbuild/plugin-tailwindcss": "^2.0.3"
+  "@rsdoctor/rspack-plugin": "^1.6.1"
+  "@rslib/core": "^0.23.2"
+  "@solidjs/router": "^1.0.0"
+  "solid-js": "^1.9.15"
+  "@types/bun": "^1.4.2"
+  "@types/node": "^26.1.1"
+  "cross-env": "^10.1.0"
+  "typescript": "^7.0.2"
+
+versioning:
+  # Groups of packages that must always share the exact same version name
+  fixed:
+    - [ "plugin", "sandbox" ]
+  lanes:
+    "@mpaynesecurity/rsbuild-plugin-fusion": beta
+  changelog:
+    storage: repository
+  ignore:
+    - "sandbox"

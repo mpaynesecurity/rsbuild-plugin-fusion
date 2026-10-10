@@ -3,6 +3,7 @@
 	"version": "0.0.0",
 	"type": "module",
 	"scripts": {
+		"dev": "bun --bun rsbuild",
 		"clean:node": "rm -rf node_modules",
 		"clean:dist": "rm -rf dist"
 	},
@@ -10,6 +11,9 @@
 		"@mpaynesecurity/rsbuild-plugin-fusion": "1.0.0"
 	},
 	"devDependencies": {
+		"@rsbuild/core": "catalog:",
+		"@rsbuild/plugin-babel": "catalog:",
+		"@rsbuild/plugin-tailwindcss": "catalog:",
 		"@types/bun": "catalog:",
 		"@types/node": "catalog:",
 		"tailwindcss": "^4.3.1",
