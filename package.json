@@ -1,5 +1,50 @@
 {
 	"type": "module",
+	"devEngines": {
+		"runtime": [
+			{
+				"name": "bun",
+				"version": "^1.4.2"
+			},
+			{
+				"name": "deno",
+				"version": "^2.9.7"
+			}
+		],
+		"packageManager": {
+			"name": "pnpm",
+			"version": "^12.8.1"
+		}
+	},
+	"scripts": {
+		"clean:deps": "rm bun.lock && rm -rf node_modules && bun run --filter '*' clean:node",
+		"clean:dist": "rm -rf dist/ && bun run --filter '*' clean:dist",
+		"plugin:build": "bun run --elide-lines=0 --filter '*/rsbuild-plugin-fusion' build && bun i",
+		"plugin:build:rsdoctor": "bun run --filter '*/rsbuild-plugin-fusion' build:rsdoctor",
+		"plugin:publish:local": "bun run --elide-lines=0 --filter '*/rsbuild-plugin-fusion' publish:local",
+		"plugin:publish:git": "bun run --elide-lines=0 --filter '*/rsbuild-plugin-fusion' publish:git",
+		"plugin:publish:npm": "bun run --elide-lines=0 --filter '*/rsbuild-plugin-fusion' publish:npm",
+		"preview": "bun dist/index.mjs",
+		"preview:build": "rm -rf dist && bun run plugin:build && bun run sandbox:build && bun run preview",
+		"sandbox:build": "pnpm -r run sandbox:dev",
+		"sandbox:dev": "turbo sandbox#dev"
+	},
+	"dependencies": {
+		"@mpaynesecurity/rsbuild-plugin-fusion": "1.0.0"
+	},
+	"devDependencies": {
+		"turbo": "^2.11.7",
+		"@rsdoctor/rspack-plugin": "^1.6.3",
+		"@types/bun": "catalog:",
+		"@types/node": "catalog:",
+		"cross-env": "catalog:",
+		"typescript": "catalog:"
+	},
+	"peerDependencies": {
+		"@solidjs/router": "catalog:",
+		"solid-js": "catalog:",
+		"@rsbuild/plugin-solid": "catalog:"
+	},
 	"workspaces": {
 		"packages": [
 			"plugin",
@@ -19,39 +64,5 @@
 			"cross-env": "^10.1.0",
 			"typescript": "^7.0.2"
 		}
-	},
-	"scripts": {
-		"clean:deps": "rm bun.lock && rm -rf node_modules && bun run --filter '*' clean:node",
-		"clean:dist": "rm -rf dist/ && bun run --filter '*' clean:dist",
-		"changelog": "changelogen --output",
-		"plugin:build": "bun run --elide-lines=0 --filter '*/rsbuild-plugin-fusion' build && bun i",
-		"plugin:build:rsdoctor": "bun run --filter '*/rsbuild-plugin-fusion' build:rsdoctor",
-		"plugin:publish:local": "bun run --elide-lines=0 --filter '*/rsbuild-plugin-fusion' publish:local",
-		"plugin:publish:git": "bun run --elide-lines=0 --filter '*/rsbuild-plugin-fusion' publish:git",
-		"plugin:publish:npm": "bun run --elide-lines=0 --filter '*/rsbuild-plugin-fusion' publish:npm",
-		"preview": "bun dist/index.mjs",
-		"preview:build": "rm -rf dist && bun run plugin:build && bun run sandbox:build && bun run preview",
-		"sandbox:build": "bun --bun rsbuild build",
-		"sandbox:build:rsdoctor": "cross-env RSDOCTOR=true bun --bun rsbuild build",
-		"sandbox:dev": "bun --bun rsbuild"
-	},
-	"dependencies": {
-		"@mpaynesecurity/rsbuild-plugin-fusion": "1.0.0"
-	},
-	"devDependencies": {
-		"@rsbuild/core": "catalog:",
-		"@rsbuild/plugin-babel": "catalog:",
-		"@rsbuild/plugin-tailwindcss": "catalog:",
-		"@rsdoctor/rspack-plugin": "^1.6.3",
-		"@types/bun": "catalog:",
-		"@types/node": "catalog:",
-		"changelogen": "^0.6.2",
-		"cross-env": "catalog:",
-		"typescript": "catalog:"
-	},
-	"peerDependencies": {
-		"@solidjs/router": "catalog:",
-		"solid-js": "catalog:",
-		"@rsbuild/plugin-solid": "catalog:"
 	}
 }

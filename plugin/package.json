@@ -6,9 +6,14 @@
 	"description": "Turns any Rsbuild SPA into a lightweight fullstack framework",
 	"keywords": [
 		"rsbuild",
-		"server functions",
-		"server actions",
-		"full stack"
+		"rspack",
+		"bun",
+		"bun fullstack",
+		"oxc",
+		"full stack",
+		"magic-string",
+		"ast-transform",
+		"client-server-compiler"
 	],
 	"funding": {
 		"type": "ko-fi",
@@ -18,10 +23,6 @@
 		".": {
 			"types": "./dist/index.d.ts",
 			"import": "./dist/index.js"
-		},
-		"./types": {
-			"types": "./dist/types/index.d.ts",
-			"import": "./dist/types/index.js"
 		}
 	},
 	"repository": {
