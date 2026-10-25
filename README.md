@@ -36,31 +36,45 @@ export default defineConfig({
 
 ### 3. Create a page/component
 
+**SolidJs**
+
+```ts
+// fn01.ts
+"use fusion"
+
+export const getBunVersion = () => process.versions.bun
+```
+
+```ts
+// fn02.ts
+"use fusion"
+
+import { homedir } from "node:os"
+
+export const getHomeDir = () => homedir()
+```
+
 ```tsx
-import { createResource, createSignal, Show } from "solid-js"
-import { useServerAction$ } from "@mpaynesecurity/rsbuild-plugin-fusion"
+import { createResource, Show } from "solid-js"
 
-const getHomeDirectory = useServerAction$(async () => {
-	return (await (import("node:os"))).homedir()
-})
-
-const getBunVersion = useServerAction$(async () => {
-	return process.versions.bun
-})
+import { getBunVersion } from "./fn01"
+import { getHomeDir } from "./fn02"
 
 export default () => {
-	const [homeDir] = createResource(getHomeDirectory)
 	const [bunVersion] = createResource(getBunVersion)
-	
+	const [homeDir] = createResource(getHomeDir)
 	return (
-		<div class="bg-gray-800 flex flex-col gap-5">
-			<Show fallback={<p>Loading OS data...</p>} when={homeDir}>
-				<pre class="text-gray-100">Home Directory: {homeDir()}</pre>
-			</Show>
-			<Show fallback={<p>Loading Bun Version..</p>} when={bunVersion}>
-				<pre class="text-gray-100">Bun Version: {bunVersion()}</pre>
-			</Show>
+		<div class="content">
+			<div class="bg-black/40 flex flex-col gap-5 p-5 rounded-md">
+				<Show fallback={<p>Loading OS data...</p>} when={homeDir}>
+					<pre class="text-gray-100" id="homedir">{homeDir()}</pre>
+				</Show>
+				<Show fallback={<p>Loading Bun Version..</p>} when={bunVersion}>
+					<pre class="text-gray-100" id="version">{bunVersion()}</pre>
+				</Show>
+			</div>
 		</div>
+	
 	)
 }
 ```
@@ -81,38 +95,24 @@ bun --bun rsbuild build
 
 #### 1. Handling of browser and server code
 
-Meta-frameworks treat the browser build and server build as completely separate targets that require a heavy bridge to
-talk to each other. Fusion blends both code bases together with minimal runtime dependencies.
+Meta-frameworks treat the browser build and server build as completely separate targets that require a heavy bridge to talk to each other. Fusion blends both code bases together with minimal runtime dependencies.
 
 #### 2. Elimination of Code-Splitting and Chunks Manifests
 
-Meta-frameworks have to generate dozens of sliced chunks and maintain a massive JSON layout file to map client-side
-network stubs back to server-side files. Fusion cuts out that entire layer because every image, script, stylesheet, and
-server action lives inside the same memory space.
+Meta-frameworks have to generate dozens of sliced chunks and maintain a massive JSON layout file to map client-side network stubs back to server-side files. Fusion cuts out that entire layer because every image, script, stylesheet, and server action lives inside the same memory space.
 
 #### 3. Single-Pass High Performance Routing
 
-Instead of spinning up heavy application routing instances or framework controllers, Fusion matches assets out of a
-native JavaScript object and serves them directly out of RAM. Text assets are pre-gzipped during compilation, meaning
-the server doesn't waste CPU cycles compressing assets on the fly.
+Instead of spinning up heavy application routing instances or framework controllers, Fusion matches assets out of a native JavaScript object and serves them directly out of RAM. Text assets are pre-gzipped during compilation, meaning the server doesn't waste CPU cycles compressing assets on the fly.
 
 #### 4. Safe Server Isolation and Closure Execution
 
-Fusion's utilization of explicit dynamic imports inside its `useServerAction$` macro allows for full access native Node
-modules such as `node:fs`, `process.*`, but ensures their code is never leaked into the browser bundle. The browser only
-receives a `fetch()` call, giving absolute isolation without complex compiler layers.
+Fusion's utilization of explicit dynamic imports inside its `useServerAction$` macro allows for full access native Node modules such as `node:fs`, `process.*`, but ensures their code is never leaked into the browser bundle. The browser only receives a `fetch()` call, giving absolute isolation without complex compiler layers.
 
 ## Disclaimers
 
-- Plugin is optimized for and only works with the Bun runtime.
-- Plugin is built on WinterCG-compliant web standards (Request, Response, and standard ES modules).
-  If your cloud provider or runtime does not support standard web primitives, that is a limitation of the provider, not
-  this tool.
-- Code base is ESM only
-- Production testing was achieved on Cloudflare via Wrangler (I am not in a financial position to use multiple cloud
-  providers),
-- I work a very demanding day job which requires frequent travel. PRs and bug fixes are welcome, but they may not be
-  addressed right away.
+- Production testing was achieved on Cloudflare via Wrangler (I am not in a financial position to use multiple cloud providers),
+- I work a very demanding day job which requires frequent travel. PRs and bug fixes are welcome, but they may not be addressed right away.
 
 ## Thank You
 

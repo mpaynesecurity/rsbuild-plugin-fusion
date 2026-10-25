@@ -13,6 +13,16 @@
 			"onFail": "ignore"
 		}
 	},
+	"keywords": [
+		"rsbuild",
+		"rspack",
+		"bun",
+		"oxc",
+		"full stack",
+		"magic-string",
+		"ast-transform",
+		"client-server-compiler"
+	],
 	"scripts": {
 		"devtools": "turbo devtools --port 3006",
 		"plugin:build": "turbo plugin-build && pnpm i",
