@@ -1,6 +1,6 @@
 {
 	"name": "@mpaynesecurity/rsbuild-plugin-fusion",
-	"version": "1.0.0",
+	"version": "2.0.0",
 	"type": "module",
 	"license": "MIT",
 	"description": "Turns any Rsbuild SPA into a lightweight fullstack framework",
@@ -8,7 +8,7 @@
 		"rsbuild",
 		"rspack",
 		"bun",
-		"bun fullstack",
+		"zimmerframe",
 		"oxc",
 		"full stack",
 		"magic-string",
@@ -28,7 +28,7 @@
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/mpaynesecurity/rsbuild-plugin-fusion.git",
-		"directory": "plugin"
+		"directory": "packages/plugin"
 	},
 	"publishConfig": {
 		"access": "public"
@@ -38,31 +38,33 @@
 		"README.md"
 	],
 	"scripts": {
-		"build": "rslib",
-		"build:rsdoctor": "cross-env RSDOCTOR=true rslib",
+		"plugin-build": "bun --bun rslib",
+		"plugin-build-rsdoctor": "cross-env RSDOCTOR=true rslib",
 		"clean:node": "rm -rf node_modules",
 		"clean:dist": "rm -rf dist",
-		"publish:local": "npm publish --registry https://registry.mpaynesecurity.net",
-		"unpublish:local": "npm unpublish @mpaynesecurity/rsbuild-plugin-fusion --registry https://registry.mpaynesecurity.net --force",
-		"publish:git": "bun publish . --registry https://npm.pkg.github.com --no-workspaces"
+		"publish:local": "pnpm publish --registry https://registry.mpaynesecurity.net",
+		"unpublish:local": "pnpm unpublish @mpaynesecurity/rsbuild-plugin-fusion --registry https://registry.mpaynesecurity.net --force",
+		"publish:git": "pnpm publish . --registry https://npm.pkg.github.com --no-workspaces"
 	},
 	"dependencies": {
-		"oxc-walker": "^1.1.1",
-		"oxc-parser": "^0.150.0",
-		"magic-string": "^1.4.1"
+		"@mpaynesecurity/rustify": "workspace:*",
+		"oxc-parser": "^0.153.0",
+		"magic-string": "^1.4.1",
+		"zimmerframe": "^1.1.5",
+		"@oxc-project/types": "^0.155.0",
+		"acorn": "^8.19.0",
+		"@types/estree": "^1.0.9"
 	},
 	"devDependencies": {
 		"@rsdoctor/rspack-plugin": "catalog:",
 		"@rsbuild/core": "catalog:",
 		"@rslib/core": "catalog:",
 		"@types/bun": "catalog:",
+		"@types/esquery": "^1.5.4",
 		"@types/node": "catalog:",
-		"cross-env": "catalog:",
-		"typescript": "catalog:"
+		"cross-env": "catalog:"
 	},
 	"peerDependencies": {
-		"@types/bun": "catalog:",
-		"@types/node": "catalog:",
-		"typescript": "catalog:"
+		"@rsbuild/core": "catalog:"
 	}
 }
