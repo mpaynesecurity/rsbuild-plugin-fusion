@@ -1,18 +1,183 @@
 {
 	"$schema": "https://turborepo.dev/schema.json",
 	"ui": "tui",
+	"globalDependencies": [
+		"**/.env",
+		"!**/*.md",
+		"!**/*.json",
+		"!**/.gitignore"
+	],
 	"globalPassThroughEnv": [
 		"PORT"
 	],
 	"tasks": {
-		"sandbox#dev": {
+		// Plugin
+		"plugin-build": {
+			"description": "Builds core plugin",
+			"outputs": [
+				"dist/**"
+			],
+			"inputs": [
+				"$TURBO_DEFAULT$"
+			],
+			"cache": true
+		},
+		"plugin-build-rsdoctor": {
+			"description": "Builds core plugin with Rsdoctor",
+			"dependsOn": [],
+			"cache": false
+		},
+		// Preact
+		"preact-build": {
 			"dependsOn": [
-				"@mpaynesecurity/rsbuild-plugin-fusion#build"
+				"^plugin-build"
+			],
+			"outputs": [
+				"dist/**"
+			],
+			"inputs": [
+				"$TURBO_DEFAULT$"
+			],
+			"cache": true
+		},
+		"preact-dev": {
+			"description": "Runs the Preact sandbox app",
+			"dependsOn": [
+				"^plugin-build"
 			],
 			"persistent": true,
 			"cache": false
 		},
-		"dev": {},
-		"build": {}
+		"preact-preview": {
+			"dependsOn": [
+				"preact-build"
+			],
+			"persistent": true,
+			"cache": false
+		},
+		"preact-test": {
+			"description": "Runs the Preact test suite",
+			"dependsOn": [
+				"^plugin-build",
+				"preact-build"
+			],
+			"persistent": true,
+			"cache": false
+		},
+		// Solid
+		"solid-build": {
+			"dependsOn": [
+				"^plugin-build"
+			],
+			"outputs": [
+				"dist/**"
+			],
+			"inputs": [
+				"$TURBO_DEFAULT$"
+			],
+			"cache": true
+		},
+		"solid-dev": {
+			"description": "Runs the SolidJs sandbox app",
+			"dependsOn": [
+				"^plugin-build"
+			],
+			"persistent": true,
+			"cache": false
+		},
+		"solid-preview": {
+			"dependsOn": [
+				"solid-build"
+			],
+			"persistent": true,
+			"cache": false
+		},
+		"solid-test": {
+			"description": "Runs the SolidJs test suite",
+			"dependsOn": [
+				"^plugin-build"
+			],
+			"persistent": true,
+			"cache": false
+		},
+		// Svelte
+		"svelte-build": {
+			"description": "Builds the Svelte sandbox app",
+			"dependsOn": [
+				"^plugin-build"
+			],
+			"outputs": [
+				"dist/**"
+			],
+			"inputs": [
+				"$TURBO_DEFAULT$"
+			],
+			"cache": true
+		},
+		"svelte-dev": {
+			"description": "Runs the Svelte sandbox app",
+			"dependsOn": [
+				"^plugin-build"
+			],
+			"persistent": true,
+			"cache": false
+		},
+		"svelte-preview": {
+			"description": "Builds the Svelte sandbox app",
+			"dependsOn": [
+				"plugin-build",
+				"svelte-build"
+			],
+			"inputs": [
+				"$TURBO_DEFAULT$"
+			],
+			"cache": false
+		},
+		"svelte-test": {
+			"description": "Runs the Svelte test suite",
+			"dependsOn": [
+				"^plugin-build"
+			],
+			"persistent": true,
+			"cache": false
+		},
+		// Vue
+		"vue-build": {
+			"description": "Runs the Vue sandbox app",
+			"dependsOn": [
+				"^plugin-build"
+			],
+			"outputs": [
+				"dist/**"
+			],
+			"inputs": [
+				"$TURBO_DEFAULT$"
+			],
+			"cache": true
+		},
+		"vue-dev": {
+			"description": "Runs the Vue sandbox app",
+			"dependsOn": [
+				"^plugin-build"
+			],
+			"persistent": true,
+			"cache": false
+		},
+		"vue-test": {
+			"description": "Runs the Vue sandbox app",
+			"dependsOn": [
+				"^plugin-build",
+				"vue-build"
+			],
+			"persistent": true,
+			"cache": false
+		},
+		"vue-preview": {
+			"dependsOn": [
+				"vue-build"
+			],
+			"persistent": true,
+			"cache": false
+		}
 	}
 }

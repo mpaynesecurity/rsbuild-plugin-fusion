@@ -1,26 +1,43 @@
 packages:
-  - plugin
-  - sandbox
+  - packages/*
+  - "!packages/plugin__OLD"
+
+allowBuilds:
+  svelte-preprocess: true
 
 catalog:
-  "@rsbuild/core": "^2.2.1"
+  "@rsbuild/core": "^2.2.12"
+  "vite": "^8.2.1"
+  "magic-string": "^1.4.1"
+  "oxc-parser": "^0.150.0"
+  "oxc-walker": "^1.1.1"
+  "tailwind-css": "^4.3.1"
+  "@tailwindcss/vite": "^4.3.1"
+  "@rstest/adapter-rsbuild": "^0.12.3"
+  "@rstest/core": "^0.12.3"
+  "@testing-library/dom": "^10.4.2"
+  "@testing-library/jest-dom": "^7.0.1"
+  "vite-plugin-inspect": "^12.0.2"
+  "vite-plugin-solid": "^2.11.12"
   "@rsbuild/plugin-babel": "^2.0.1"
+  "happy-dom": "^20.14.5"
   "@rsbuild/plugin-solid": "^1.2.2"
   "@rsbuild/plugin-tailwindcss": "^2.0.3"
   "@rsdoctor/rspack-plugin": "^1.6.1"
-  "@rslib/core": "^0.23.2"
+  "@rslib/core": "^1.0.3"
   "@solidjs/router": "^1.0.0"
   "solid-js": "^1.9.15"
   "@types/bun": "^1.4.2"
   "@types/node": "^26.1.1"
   "cross-env": "^10.1.0"
-  "typescript": "^7.0.2"
+  "typescript": "^6.0.3"
+  "@rstest/playwright": "^0.12.3"
 
 versioning:
   # Groups of packages that must always share the exact same version name
   fixed:
     - [ "plugin", "sandbox" ]
-  lanes:
-    "@mpaynesecurity/rsbuild-plugin-fusion": beta
+  #  lanes:
+  #    "@mpaynesecurity/rsbuild-plugin-fusion": beta
   changelog:
     storage: repository

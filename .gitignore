@@ -10,5 +10,7 @@ dist/
 # IDE
 .idea
 /.env
-!/plugin/
 /bunfig.toml
+/.turbo/*
+/packages/plugin__OLD/
+/packages/rustify/

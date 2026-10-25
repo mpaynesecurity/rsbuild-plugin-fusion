@@ -5,40 +5,40 @@
 			{
 				"name": "bun",
 				"version": "^1.4.2"
-			},
-			{
-				"name": "deno",
-				"version": "^2.9.7"
 			}
 		],
 		"packageManager": {
 			"name": "pnpm",
-			"version": "^12.8.1"
+			"version": "^12.10.1",
+			"onFail": "ignore"
 		}
 	},
 	"scripts": {
-		"clean:deps": "rm bun.lock && rm -rf node_modules && bun run --filter '*' clean:node",
-		"clean:dist": "rm -rf dist/ && bun run --filter '*' clean:dist",
-		"plugin:build": "bun run --elide-lines=0 --filter '*/rsbuild-plugin-fusion' build && bun i",
-		"plugin:build:rsdoctor": "bun run --filter '*/rsbuild-plugin-fusion' build:rsdoctor",
-		"plugin:publish:local": "bun run --elide-lines=0 --filter '*/rsbuild-plugin-fusion' publish:local",
-		"plugin:publish:git": "bun run --elide-lines=0 --filter '*/rsbuild-plugin-fusion' publish:git",
-		"plugin:publish:npm": "bun run --elide-lines=0 --filter '*/rsbuild-plugin-fusion' publish:npm",
-		"preview": "bun dist/index.mjs",
-		"preview:build": "rm -rf dist && bun run plugin:build && bun run sandbox:build && bun run preview",
-		"sandbox:build": "pnpm -r run sandbox:dev",
-		"sandbox:dev": "turbo sandbox#dev"
-	},
-	"dependencies": {
-		"@mpaynesecurity/rsbuild-plugin-fusion": "1.0.0"
+		"devtools": "turbo devtools --port 3006",
+		"plugin:build": "turbo plugin-build && pnpm i",
+		"plugin:build:rsdoctor": "turbo plugin-build-rsdoctor",
+		"preact:build": "turbo preact-build",
+		"preact:dev": "turbo preact-dev",
+		"preact:test": "turbo preact-test",
+		"preact:preview": "turbo preact-preview",
+		"svelte:build": "turbo svelte-build",
+		"svelte:dev": "turbo svelte-dev",
+		"svelte:test": "turbo svelte-test",
+		"svelte:preview": "turbo svelte-preview",
+		"solid:build": "turbo solid-build",
+		"solid:dev": "turbo solid-dev",
+		"solid:test": "turbo solid-test",
+		"solid:preview": "turbo solid-preview",
+		"vue:build": "turbo vue-build",
+		"vue:dev": "turbo vue-dev",
+		"vue:test": "turbo vue-test",
+		"vue:preview": "turbo vue-preview",
+		"test:all": "pnpm svelte:test; pnpm solid:test; pnpm vue:test"
 	},
 	"devDependencies": {
 		"turbo": "^2.11.7",
-		"@rsdoctor/rspack-plugin": "^1.6.3",
 		"@types/bun": "catalog:",
-		"@types/node": "catalog:",
-		"cross-env": "catalog:",
-		"typescript": "catalog:"
+		"@types/node": "catalog:"
 	},
 	"peerDependencies": {
 		"@solidjs/router": "catalog:",
@@ -47,22 +47,33 @@
 	},
 	"workspaces": {
 		"packages": [
-			"plugin",
-			"sandbox"
+			"packages/*"
 		],
 		"catalog": {
-			"@rsbuild/core": "^2.2.1",
+			"@rsbuild/core": "^2.2.12",
+			"vite": "^8.2.1",
+			"magic-string": "^1.4.1",
+			"oxc-parser": "^0.150.0",
+			"oxc-walker": "^1.1.1",
+			"tailwind-css": "^4.3.1",
+			"@tailwindcss/vite": "^4.3.1",
+			"@rstest/adapter-rsbuild": "^0.12.3",
+			"@rstest/core": "^0.12.3",
+			"@testing-library/dom": "^10.4.2",
+			"@testing-library/jest-dom": "^7.0.1",
+			"vite-plugin-inspect": "^12.0.2",
+			"vite-plugin-solid": "^2.11.12",
 			"@rsbuild/plugin-babel": "^2.0.1",
+			"happy-dom": "^20.14.5",
 			"@rsbuild/plugin-solid": "^1.2.2",
 			"@rsbuild/plugin-tailwindcss": "^2.0.3",
 			"@rsdoctor/rspack-plugin": "^1.6.1",
-			"@rslib/core": "^0.23.2",
+			"@rslib/core": "^1.0.3",
 			"@solidjs/router": "^1.0.0",
 			"solid-js": "^1.9.15",
 			"@types/bun": "^1.4.2",
 			"@types/node": "^26.1.1",
-			"cross-env": "^10.1.0",
-			"typescript": "^7.0.2"
+			"cross-env": "^10.1.0"
 		}
 	}
 }
