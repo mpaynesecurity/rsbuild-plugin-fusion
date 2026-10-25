@@ -1,0 +1,9 @@
+{
+	"extends": [
+		"//"
+	],
+	"tags": [
+		"test",
+		"solid"
+	]
+}

@@ -1,0 +1,28 @@
+{
+	"name": "preact-tests",
+	"version": "1.0.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"preact-build": "bun --bun rsbuild build",
+		"preact-dev": "bun --bun rsbuild",
+		"preact-preview": "bun dist/indes.js",
+		"preact-test": "bun --bun rstest",
+		"test:watch": "rstest --watch"
+	},
+	"dependencies": {
+		"preact": "^10.29.8",
+		"@mpaynesecurity/rsbuild-plugin-fusion": "workspace:*"
+	},
+	"devDependencies": {
+		"@rsbuild/core": "catalog:",
+		"@rstest/playwright": "catalog:",
+		"@rsbuild/plugin-preact": "^2.1.0",
+		"@rstest/adapter-rsbuild": "^0.12.3",
+		"@rstest/core": "catalog:",
+		"@testing-library/dom": "catalog:",
+		"@testing-library/jest-dom": "catalog:",
+		"@types/node": "catalog:",
+		"@types/bun": "catalog:"
+	}
+}

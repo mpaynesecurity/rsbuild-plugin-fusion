@@ -1,0 +1,29 @@
+{
+	"name": "vue-tests",
+	"version": "1.0.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"vue-build": "bun --bun rsbuild build",
+		"vue-dev": "bun --bun rsbuild",
+		"vue-preview": "bun dist/index.js",
+		"vue-test": "bun --bun rstest",
+		"test:watch": "rstest --watch"
+	},
+	"dependencies": {
+		"vue": "^3.5.43",
+		"@mpaynesecurity/rsbuild-plugin-fusion": "workspace:*"
+	},
+	"devDependencies": {
+		"@rsbuild/core": "catalog:",
+		"@rsbuild/plugin-vue": "^2.0.1",
+		"@rstest/adapter-rsbuild": "catalog:",
+		"@rstest/core": "catalog:",
+		"@testing-library/jest-dom": "catalog:",
+		"@types/node": "catalog:",
+		"@types/bun": "catalog:",
+		"@vue/test-utils": "^2.5.1",
+		"@rstest/playwright": "catalog:",
+		"vue-tsc": "^3.3.12"
+	}
+}

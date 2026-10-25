@@ -1,0 +1,10 @@
+{
+	"extends": "../../tsconfig.json",
+	"compilerOptions": {
+		"isolatedDeclarations": false,
+		"jsxImportSource": "solid-js",
+		"jsx": "preserve"
+		//		"composite": true,
+		//		"outDir": "dist"
+	}
+}

@@ -1,0 +1,29 @@
+{
+	"name": "solid-tests",
+	"version": "0.1.0",
+	"type": "module",
+	"scripts": {
+		"solid-preview": "bun dist/index.js",
+		"solid-dev": "bun --bun rsbuild",
+		"solid-build": "bun --bun rsbuild build",
+		"solid-test": "bun --bun rstest",
+		"clean:node": "rm -rf node_modules",
+		"clean:dist": "rm -rf dist"
+	},
+	"dependencies": {
+		"@mpaynesecurity/rsbuild-plugin-fusion": "workspace:*"
+	},
+	"devDependencies": {
+		"@rstest/playwright": "catalog:",
+		"@rsbuild/core": "catalog:",
+		"@rsbuild/plugin-babel": "catalog:",
+		"@rsbuild/plugin-tailwindcss": "catalog:",
+		"@types/bun": "catalog:",
+		"@types/node": "catalog:",
+		"tailwindcss": "^4.3.1"
+	},
+	"peerDependencies": {
+		"@solidjs/router": "catalog:",
+		"solid-js": "catalog:"
+	}
+}

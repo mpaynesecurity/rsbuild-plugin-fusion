@@ -1,0 +1,22 @@
+{
+	"compilerOptions": {
+		"extends": "../../tsconfig.json",
+		"rootDir": "src",
+		"lib": [
+			"DOM",
+			"ES2020"
+		],
+		"jsx": "preserve",
+		"types": [
+			"@rsbuild/core/types",
+			"node",
+			"bun"
+		],
+		"jsxImportSource": "vue"
+	},
+	"include": [
+		"src/**/*.ts",
+		"src/**/*.tsx",
+		"src/**/*.vue"
+	]
+}
