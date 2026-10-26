@@ -1,0 +1,1 @@
+export const getBunVersion = () => process.versions.bun

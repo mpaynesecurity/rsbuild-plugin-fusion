@@ -14,3 +14,4 @@ dist/
 /.turbo/*
 /packages/plugin__OLD/
 /packages/rustify/
+/.turbo/

@@ -1,145 +1,97 @@
-import { type Rspack } from "@rsbuild/core"
-import MagicString from "magic-string"
-import { createHash } from "node:crypto"
+import type { Rspack } from "@rsbuild/core"
 import { parseSync } from "oxc-parser"
+import { generateHash } from "../helpers"
+import type { RpcLoaderOptions } from "../types"
 
-
-export default function rpcMacroLoader(this: Rspack.LoaderContext, code: string): string | void {
+export default function rpcMacroLoader(this: Rspack.LoaderContext<RpcLoaderOptions>, code: string): string | void {
+	// FIX 1: Renamed variable from 'id' to 'filePath' to stop name collisions in Bun's dev context
 	const filePath = this.resourcePath
+	
 	const isBuild = this.mode === "production"
 	
-	if(!filePath.endsWith(".ts")) {
+	const options = this.getOptions()
+	const {productionRpcManifest, developmentRpcManifest} = options
+	
+	// FIX 2: Clear extension check using the renamed tracking variable token
+	if(!filePath.endsWith(".server.ts")) {
 		return code
 	}
+	// Let OXC parse the file once just to find the names of the exported functions
+	const result = parseSync(filePath, code, {lang: "ts", sourceType: "module"})
 	
-	if(!code.includes(`"use fusion"`) && !code.includes(`'use fusion'`)) {
-		return code
-	}
-	
-	const result = parseSync(filePath, code, {sourceType: "module"})
-	const s: MagicString = new MagicString(code)
-	
-	const fileHash = createHash("sha256").update(filePath).digest("hex").slice(0, 8)
-	const rpcId: string = `fn_${fileHash}`
-	
-	const mutations: {start: number; run: () => void}[] = []
 	const exports: string[] = []
 	
-	if(result.program && Array.isArray(result.program.body)) {
-		const programBody = result.program.body
-		
-		// FIX: Dynamically determine the environment without options passing.
-		// In production, use an anonymous safe string ("prod") to scrub your home directory.
-		// In dev, pass your raw local path so your server middleware can import it cleanly off your disk!
-		
-		const runtimeFilePath = isBuild ? "prod" : filePath.replace(/\\/g, "/")
-		
-		// PASS 1: Isolate and strip native server-side core import declarations safely
-		for(const statement of programBody) {
-			if(statement.type === "ImportDeclaration" && statement.source && typeof statement.source.value === "string") {
-				mutations.push({
-					start: statement.start,
-					run: () => {
-						let endPos = statement.end
-						while(endPos < code.length && (code[endPos] === ";" || code[endPos] === " " || code[endPos] === "\r" || code[endPos] === "\n")) {
-							endPos++
-						}
-						s.remove(statement.start, endPos)
-					},
-				})
-			}
-		}
-		
-		// PASS 2: Independent processing pass for Export declarations
-		for(const statement of programBody) {
-			if(statement.type === "ExportNamedDeclaration") {
+	// Check if program body parsed successfully to prevent crashes
+	if(result.program && result.program.body) {
+		for(const statement of result.program.body) {
+			if(statement.type === "ExportNamedDeclaration" && statement.declaration) {
 				const decl = statement.declaration
 				
-				if(decl) {
-					if(decl.type === "FunctionDeclaration" && decl.id && decl.body) {
-						const exportName: string = decl.id.name
-						const uniqueRpcId = `${rpcId}_${exportName}`
-						exports.push(exportName)
-						
-						mutations.push({
-							start: statement.start,
-							run: () => {
-								s.overwrite(
-									decl.body!.start,
-									decl.body!.end,
-									`{
-		return fetch('/fusion/rpc?id=${uniqueRpcId}&file=${encodeURIComponent(runtimeFilePath)}&method=${exportName}', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify(args)
-		}).then((r) => r.json()).then((d) => d.result);
-	}`,
-								)
-							},
-						})
-					}
-					
-					if(decl.type === "VariableDeclaration" && Array.isArray(decl.declarations)) {
-						for(const declarator of decl.declarations) {
-							if(
-								declarator.id &&
-								declarator.id.type === "Identifier" &&
-								declarator.id.name &&
-								declarator.init
-							) {
-								const exportName: string = declarator.id.name
-								const uniqueRpcId = `${rpcId}_${exportName}`
-								exports.push(exportName)
-								
-								mutations.push({
-									start: statement.start,
-									run: () => {
-										s.overwrite(
-											declarator.init!.start,
-											declarator.init!.end,
-											`(...args) => fetch('/fusion/rpc?id=${uniqueRpcId}&file=${encodeURIComponent(runtimeFilePath)}&method=${exportName}', {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify(args)
-	}).then((r) => r.json()).then((d) => d.result)`,
-										)
-									},
-								})
+				// Handles: export function myFn() {}
+				if(decl.type === "FunctionDeclaration" && decl.id) {
+					exports.push(decl.id.name)
+				}
+				
+				// Handles: export const myFn = () => {}
+				if(decl.type === "VariableDeclaration") {
+					for(const declarator of decl.declarations) {
+						// FIX TS2367: Use an 'in' check or cast the type field so the strict type checker shuts up
+						if(declarator.id && "type" in declarator.id) {
+							const idNode = declarator.id as Record<string, any>
+							if((idNode.type === "BindingIdentifier" || idNode.type === "Identifier") && idNode.name) {
+								exports.push(idNode.name)
 							}
 						}
 					}
 				}
 			}
 		}
+	}
+	
+	// Generate a client-side file containing fetch endpoints
+	const fileHash = generateHash(filePath)
+	const clientSource: string[] = []
+	
+	for(const exportName of exports) {
+		const rpcId = `fn_${fileHash}_${exportName}`
 		
-		mutations.sort((a, b) => b.start - a.start)
-		for(const mutation of mutations) {
-			mutation.run()
+		// Normalize Windows file paths for safe network transport
+		const safePath = filePath.replace(/\\/g, "/")
+		
+		/*
+		 * In Development: The client URL keeps local filepath: /fusion/rpc?id=...&file=...&method=...
+		 * In Production: The local filesystem path string is completely omitted from the source code, producing a safe, clean token contract: /fusion/rpc?id=...&method=....
+		 */
+		const rpcUrl = isBuild ? `/fusion/rpc?id=${rpcId}&method=${exportName}` : `/fusion/rpc?id=${rpcId}&file=${encodeURIComponent(safePath)}&method=${exportName}`
+		
+		// FIX: Include the 'file' and 'method' parameters that your server middleware requires
+		// clientSource.push(`
+		// 	export function ${exportName}(...args) {
+		// 		return fetch('/fusion/rpc?id=${rpcId}&file=${encodeURIComponent(safePath)}&method=${exportName}', {
+		// 			method: 'POST',
+		// 			headers: { 'Content-Type': 'application/json' },
+		// 			body: JSON.stringify(args)
+		// 		}).then(r => r.json()).then(d => d.result)
+		// 	}
+		// `)
+		
+		clientSource.push(`
+			export function ${exportName}(...args) {
+				return fetch('${rpcUrl}', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify(args)
+				}).then(r => r.json()).then(d => d.result)
+			}
+		`)
+		if(isBuild) {
+			productionRpcManifest.set(rpcId, filePath)
+		}
+		else {
+			developmentRpcManifest.set(rpcId, new Function(`let _f = "${filePath.replace(/\\/g, "/")}"; return _f`)())
 		}
 	}
 	
-	
-	// PROD BUILD COMPILER SIDE-STEP: Emit virtual code strings across the process boundary natively
-	if(isBuild && exports.length > 0) {
-		const intermediatePayload = {
-			rpcId,
-			filePath,
-			exports,
-			originalFileCode: code,
-		}
-		this.emitFile(`.fusion-internal/${rpcId}.json`, JSON.stringify(intermediatePayload))
-	}
-	
-	const map = s.generateMap({hires: true})
-	
-	this.callback(null, s.toString(), {
-		debugId: "fusion",
-		version: map.version,
-		mappings: map.mappings,
-		names: map.names,
-		file: map.file ?? "",
-		sources: map.sources.map((src: string | null) => src ?? ""),
-		sourcesContent: map.sourcesContent ? map.sourcesContent.map((c: string | null) => c ?? "") : undefined,
-	})
-	return
+	// Send the client code down the pipeline—zero server logic leaks
+	return clientSource.join("\n")
 }

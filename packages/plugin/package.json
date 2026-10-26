@@ -49,17 +49,13 @@
 		"@mpaynesecurity/rustify": "workspace:*",
 		"oxc-parser": "^0.153.0",
 		"magic-string": "^1.4.1",
-		"zimmerframe": "^1.1.5",
-		"@oxc-project/types": "^0.155.0",
-		"acorn": "^8.19.0",
-		"@types/estree": "^1.0.9"
+		"@oxc-project/types": "^0.155.0"
 	},
 	"devDependencies": {
 		"@rsdoctor/rspack-plugin": "catalog:",
 		"@rsbuild/core": "catalog:",
 		"@rslib/core": "catalog:",
 		"@types/bun": "catalog:",
-		"@types/esquery": "^1.5.4",
 		"@types/node": "catalog:",
 		"cross-env": "catalog:"
 	},

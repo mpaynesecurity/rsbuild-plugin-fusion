@@ -45,6 +45,7 @@ const config: RslibConfig = defineConfig({
 			source: {
 				entry: {
 					index: "index.ts",
+					"types": "types/index.ts",
 					"templates/serverEngine": "templates/serverEngine.ts",
 					"loaders/rpcMacroLoader": "loaders/rpcMacroLoader.ts",
 					

@@ -20,7 +20,9 @@
 		"@rsbuild/plugin-tailwindcss": "catalog:",
 		"@types/bun": "catalog:",
 		"@types/node": "catalog:",
-		"tailwindcss": "^4.3.1"
+		"tailwindcss": "^4.3.1",
+		"@rstest/adapter-rsbuild": "catalog:",
+		"@rstest/core": "catalog:"
 	},
 	"peerDependencies": {
 		"@solidjs/router": "catalog:",

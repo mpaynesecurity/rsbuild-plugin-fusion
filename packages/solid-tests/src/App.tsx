@@ -1,9 +1,9 @@
 import { createResource, Show } from "solid-js"
 
-import { getBunVersion } from "./fn01"
-import { getHomeDir } from "./fn02"
+import { getHomeDir } from "./fn01.server"
+import { getBunVersion } from "./fn02.server.ts"
 
-export default () => {
+export const App = () => {
 	const [bunVersion] = createResource(getBunVersion)
 	const [homeDir] = createResource(getHomeDir)
 	return (
