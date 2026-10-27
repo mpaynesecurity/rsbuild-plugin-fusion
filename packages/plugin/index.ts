@@ -52,37 +52,30 @@
  */
 
 import { type RsbuildPlugin } from "@rsbuild/core"
+import { rspack } from "@rslib/core"
 import MagicString from "magic-string"
 import { existsSync } from "node:fs"
 import { mkdir, readdir, stat } from "node:fs/promises"
 import { type IncomingMessage, type ServerResponse } from "node:http"
-import { dirname, posix, resolve } from "node:path"
-
-import { clientAssets, developmentRpcManifest, type NextFunction, productionRpcManifest, type RpcLoaderOptions } from "./types"
-
-const filename = Bun.fileURLToPath(import.meta.url)
-
-const localDirectory = dirname(filename)
+import { dirname, relative, resolve } from "node:path"
+import { clientAssets, productionFnManifest } from "./types"
 
 export const fusionPlugin = (): RsbuildPlugin => ({
 	name: "fusion",
 	enforce: "pre",
-	setup({logger, modifyRspackConfig, onBeforeStartDevServer, onCloseBuild, context, processAssets}) {
+	setup({logger, modifyRspackConfig, onBeforeStartDevServer, onCloseBuild, context}) {
+		const filename = Bun.fileURLToPath(import.meta.url)
+		const localDirectory = dirname(filename)
 		
-		modifyRspackConfig(({module}) => {
-			
+		modifyRspackConfig(async ({module}) => {
 			module = module || {}
 			module.rules = module.rules || []
 			
-			const loaderOptions: RpcLoaderOptions = {
-				productionRpcManifest,
-				developmentRpcManifest,
-			}
+			//const fusionLoaderPath = resolve(localDirectory, "loaders", "fusionLoader.js")
+			const fusionLoaderPath = await Bun.resolve("./loaders/fusionLoader.js", import.meta.dirname)
 			
-			const rpcMacroLoaderFile = resolve(localDirectory, "loaders", "rpcMacroLoader.js")
-			
-			if(!rpcMacroLoaderFile) {
-				console.error(`${rpcMacroLoaderFile} was not found`)
+			if(!fusionLoaderPath) {
+				logger.error(`${fusionLoaderPath} was not found`)
 				process.exit(1)
 			}
 			
@@ -94,8 +87,7 @@ export const fusionPlugin = (): RsbuildPlugin => ({
 				enforce: "post",
 				use: [
 					{
-						loader: rpcMacroLoaderFile,
-						options: loaderOptions,
+						loader: fusionLoaderPath,
 					},
 				],
 			})
@@ -145,14 +137,12 @@ export const fusionPlugin = (): RsbuildPlugin => ({
 						res.end(JSON.stringify({
 							error: {
 								message: errorInstance?.message || String(err),
-								stack: errorInstance?.stack,
 							},
 						}))
 					}
 				})
 			})
 		})
-		
 		
 		onCloseBuild(async () => {
 			// Return if the "command" is not "build"
@@ -161,18 +151,17 @@ export const fusionPlugin = (): RsbuildPlugin => ({
 			}
 			logger.start("Starting build process")
 			
-			// Pre-normalize root output directory into POSIX format once
-			const normalizedOutputPath = resolve(context.rootPath, context.distPath).replace(/\\/g, "/")
+			// Path to dist/
+			const prodDistPath = context.distPath
 			
-			logger.info(`-> Found ${productionRpcManifest.size} server functions`)
+			logger.info(`-> Found ${productionFnManifest.size} server functions`)
 			
-			if(existsSync(normalizedOutputPath)) {
+			if(existsSync(prodDistPath)) {
 				// Use simple relative string entries to capture complete subdirectory paths
-				const relativeEntries = await readdir(normalizedOutputPath, {recursive: true}) as string[]
+				const prodDistEntries = await readdir(prodDistPath, {recursive: true}) as string[]
 				
-				for(const relativeEntry of relativeEntries) {
-					const assetAbsolutePath = resolve(normalizedOutputPath, relativeEntry)
-					const assetNormalizedPath = assetAbsolutePath.replace(/\\/g, "/")
+				for(const entry of prodDistEntries) {
+					const assetAbsolutePath = resolve(prodDistPath, entry)
 					
 					// Ignore subdirectories in the file tree
 					if((await stat(assetAbsolutePath)).isDirectory()) {
@@ -180,77 +169,64 @@ export const fusionPlugin = (): RsbuildPlugin => ({
 					}
 					
 					// Faster directory exclusion check than regex splitting on every item
-					if(assetNormalizedPath.includes("/rpc")) {
+					if(assetAbsolutePath.includes("/server-fn")) {
 						continue
 					}
 					
-					// Forces the POSIX engine on Windows, Linux, and macOS equally
-					const relativePath = posix.relative(normalizedOutputPath, assetNormalizedPath)
-					
-					// Normalize by splitting on OS separators and joining with a forward slash
-					const url = `/${relativePath}`
+					const relativePath = relative(prodDistPath, assetAbsolutePath)
 					
 					const fileBuffer = await Bun.file(assetAbsolutePath).arrayBuffer()
 					
 					let bytes = new Uint8Array(fileBuffer)
 					
-					const ext = relativeEntry.slice(relativeEntry.lastIndexOf("."))
+					const ext = entry.slice(entry.lastIndexOf("."))
 					
-					const isText = [".html", ".js", ".css", ".svg", ".json"].includes(ext)
+					const isAsset = [".html", ".js", ".css", ".svg", ".json"].includes(ext)
 					
-					if(isText) {
+					if(isAsset) {
 						bytes = Bun.gzipSync(bytes)
 					}
+					
 					// Convert bytes directly to a safe base64 string for JSON insertion
 					const base64Content = Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength).toString("base64")
-					clientAssets[url] = {
+					clientAssets[`/${relativePath}`] = {
 						content: base64Content,
-						isGzip: isText,
+						isGzip: isAsset,
 					}
 				}
 			}
-			const rpcLines = new MagicString("")
+			// Placeholder for dynamically injected import statements
+			const msImports = new MagicString("")
 			
-			const rpcOutputDir = resolve(normalizedOutputPath, "rpc")
+			const serverFnOutputDir = `${prodDistPath}/server-fn`
 			
-			// Create the `rpc` directory inside the dist folder
-			if(!existsSync(rpcOutputDir)) {
-				await mkdir(rpcOutputDir, {recursive: true})
-			}
+			await mkdir(serverFnOutputDir, {recursive: true})
 			
-			const transpiler = new Bun.Transpiler({loader: "ts"})
-			
-			for(const [rpcId, srcFilePath] of productionRpcManifest.entries()) {
-				const rawRpcFileName = `${rpcId}.raw.js`
-				const rpcRawFilePath = resolve(rpcOutputDir, rawRpcFileName)
+			for(const [serverFnId, srcFilePath] of productionFnManifest.entries()) {
 				
-				const bridgeRpcFileName = `${rpcId}.js`
-				const rpcBridgeFilePath = resolve(rpcOutputDir, bridgeRpcFileName)
+				const serverFn = await Bun.file(srcFilePath).text()
 				
-				// Read the original TypeScript file content
-				const rawCodeContent = await Bun.file(srcFilePath).text()
+				const transpiledServerFn = rspack.experiments.swc.transformSync(serverFn, {
+					filename: serverFn,
+					jsc: {
+						parser: {
+							syntax: "typescript",
+						},
+						target: "esnext",
+					},
+					module: {
+						type: "nodenext",
+					},
+				}).code
 				
-				// FIX: Use .scan() to programmatically find all named exports from the AST
-				const {exports} = transpiler.scan(rawCodeContent) // Returns an array of strings like ['clearSession']
+				const msServerFnId = new MagicString(serverFnId)
+				// "fn_13307412_getHomeDir" -> removes everything up to the final underscore index
+				const hashEndIndex = serverFnId.lastIndexOf("_")
+				msServerFnId.remove(0, hashEndIndex + 1)
 				
-				// Grab the first exported function token string
-				const realFunctionName = exports[0]
+				await Bun.write(`${serverFnOutputDir}/${serverFnId}.js`, transpiledServerFn)
 				
-				if(!realFunctionName) {
-					logger.error(`[Plugin] Error: No exported function found inside ${srcFilePath}`)
-					process.exit(1)
-				}
-				
-				logger.info(`\t${realFunctionName}`)
-				// Strip types and write the raw file
-				const vanillaJsContent = transpiler.transformSync(rawCodeContent)
-				await Bun.write(rpcRawFilePath, vanillaJsContent.trim())
-				
-				// 3. Write ESM alias re-export statement
-				const bridgeContent = `export { ${realFunctionName} as ${rpcId} } from "./${rawRpcFileName}";`
-				await Bun.write(rpcBridgeFilePath, bridgeContent)
-				
-				rpcLines.append(`import { ${rpcId} } from "./rpc/${bridgeRpcFileName}"\nrpcFunctions.set("${rpcId}", ${rpcId})\n`)
+				msImports.append(`import {${msServerFnId.toString()}} from "./server-fn/${serverFnId}"\nrpcFunctions.set("${serverFnId}", ${msServerFnId.toString()})\n`)
 			}
 			
 			const serverEngineTemplate = resolve(localDirectory, "templates", "serverEngine.js")
@@ -264,39 +240,38 @@ export const fusionPlugin = (): RsbuildPlugin => ({
 			
 			const msServerCode = new MagicString(serverEngineCode)
 			
-			const assetToken = "__CLIENT_ASSETS_INJECTION_TOKEN__"
-			const rpcToken = "__RPC_FUNCTIONS_INJECTION_TOKEN__"
-			
-			// Find the exact index position of `__RPC_FUNCTIONS_INJECTION_TOKEN__` text markers
-			const rpcIdx = serverEngineCode.indexOf(rpcToken)
-			
+			const clientAssetsPlaceholder = "__CLIENT_ASSETS_INJECTION_TOKEN__"
 			// Find the exact index position of `__CLIENT_ASSETS_INJECTION_TOKEN__` text markers
-			const assetIdx = serverEngineCode.indexOf(assetToken)
+			const clientAssetIdx = serverEngineCode.indexOf(clientAssetsPlaceholder)
 			
-			if(assetIdx !== -1) {
+			if(clientAssetIdx !== -1) {
 				const assetPayloadString = `\nclientAssets = ${JSON.stringify(clientAssets)}\n`
 				// Overwrite the explicit boundaries from token start to token end to prevent drift corruption!
-				msServerCode.overwrite(assetIdx, assetIdx + assetToken.length, assetPayloadString)
+				msServerCode.overwrite(clientAssetIdx, clientAssetIdx + clientAssetsPlaceholder.length, assetPayloadString)
 			}
 			else {
-				logger.error("[Plugin] Error: CLIENT_ASSETS token placeholder missing")
+				logger.error("[Plugin] Error: Client assets token placeholder missing")
 				process.exit(1)
 			}
 			
-			if(rpcIdx !== -1) {
+			const serverFnsPlaceholder = "__SERVER_FUNCTIONS_INJECTION_TOKEN__"
+			// Find the exact index position of `__SERVER_FUNCTIONS_INJECTION_TOKEN__` text markers
+			const serverFnIdx = serverEngineCode.indexOf(serverFnsPlaceholder)
+			
+			if(serverFnIdx !== -1) {
 				// Overwrite the explicit boundaries from token start to token end
-				msServerCode.overwrite(rpcIdx, rpcIdx + rpcToken.length, rpcLines.toString())
+				msServerCode.overwrite(serverFnIdx, serverFnIdx + serverFnsPlaceholder.length, msImports.toString())
 			}
 			else {
 				logger.error("[Plugin] Error: RPC token placeholder missing")
 				process.exit(1)
 			}
 			
-			const indexFile = resolve(normalizedOutputPath, "index.js")
+			const indexFile = resolve(prodDistPath, "index.js")
 			
 			await Bun.write(indexFile, msServerCode.toString())
 			
-			logger.success(`Build artifacts written to ${normalizedOutputPath}`)
+			logger.success(`Build artifacts written to ${prodDistPath}`)
 		})
 	},
 })

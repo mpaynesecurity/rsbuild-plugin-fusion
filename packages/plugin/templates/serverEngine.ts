@@ -6,7 +6,7 @@ const rpcFunctions: Map<string, (...args: any[]) => any> = new Map<string, (...a
 __CLIENT_ASSETS_INJECTION_TOKEN__
 
 //@ts-ignore - Required for rpc function asset injection
-__RPC_FUNCTIONS_INJECTION_TOKEN__
+__SERVER_FUNCTIONS_INJECTION_TOKEN__
 
 /** Allowed mime types */
 type MimeTypes = "html" | "css" | "js" | "json" | "text"
