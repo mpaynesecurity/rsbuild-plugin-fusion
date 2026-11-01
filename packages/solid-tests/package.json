@@ -4,7 +4,8 @@
 	"type": "module",
 	"scripts": {
 		"solid-preview": "bun dist/index.js",
-		"solid-dev": "bun --bun rsbuild",
+		"solid-dev-bun": "bun --bun rsbuild",
+		"solid-dev-node": "rsbuild",
 		"solid-build": "bun --bun rsbuild build",
 		"solid-test": "bun --bun rstest",
 		"clean:node": "rm -rf node_modules",

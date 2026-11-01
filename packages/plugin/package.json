@@ -22,7 +22,8 @@
 		".": {
 			"types": "./dist/index.d.ts",
 			"import": "./dist/index.js"
-		}
+		},
+		"./virtual": "./dist/globals.d.ts"
 	},
 	"repository": {
 		"type": "git",
@@ -39,6 +40,7 @@
 	"scripts": {
 		"plugin-build": "bun --bun rslib",
 		"plugin-build-rsdoctor": "cross-env RSDOCTOR=true rslib",
+		"plugin-test": "rstest",
 		"clean:node": "rm -rf node_modules",
 		"clean:dist": "rm -rf dist",
 		"publish:local": "pnpm publish --registry https://registry.mpaynesecurity.net",
@@ -47,17 +49,22 @@
 	},
 	"dependencies": {
 		"@mpaynesecurity/rustify": "workspace:*",
-		"oxc-parser": "^0.153.0",
-		"magic-string": "^1.4.1",
-		"@oxc-project/types": "^0.155.0"
+		"acorn": "^8.19.0",
+		"astring": "^1.9.0",
+		"zimmerframe": "^1.1.5",
+		"@sveltejs/acorn-typescript": "^1.0.13",
+		"magic-string": "^1.4.5"
 	},
 	"devDependencies": {
+		"@types/estree": "^1.0.10",
 		"@rsdoctor/rspack-plugin": "catalog:",
 		"@rsbuild/core": "catalog:",
 		"@rslib/core": "catalog:",
 		"@types/bun": "catalog:",
 		"@types/node": "catalog:",
-		"cross-env": "catalog:"
+		"cross-env": "catalog:",
+		"@rstest/adapter-rsbuild": "catalog:",
+		"@rstest/core": "catalog:"
 	},
 	"peerDependencies": {
 		"@rsbuild/core": "catalog:"
