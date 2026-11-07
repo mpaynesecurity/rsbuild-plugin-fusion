@@ -5,7 +5,7 @@ import { defineConfig, type RslibConfig } from "@rslib/core"
 const config: RslibConfig = defineConfig({
 	lib: [
 		{
-			id: "fusion-no-bundle",
+			id: "fusion",
 			bundle: false,
 			dts: {
 				isolated: true,
@@ -13,7 +13,7 @@ const config: RslibConfig = defineConfig({
 			},
 			source: {
 				entry: {
-					index: ["src/**", "!src/__*.ts", "src/plugins/**"],
+					index: ["src/**"],
 				},
 			},
 			splitChunks: {
