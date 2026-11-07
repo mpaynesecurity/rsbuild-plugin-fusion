@@ -3,8 +3,7 @@ import MagicString from "magic-string"
 import { createHash } from "node:crypto"
 import { parseSync } from "oxc-parser"
 
-
-export default function rpcMacroLoader(this: Rspack.LoaderContext, code: string): string | void {
+export default function fusionLoader(this: Rspack.LoaderContext, code: string): string | void {
 	const filePath = this.resourcePath
 	const isBuild = this.mode === "production"
 	
@@ -30,11 +29,11 @@ export default function rpcMacroLoader(this: Rspack.LoaderContext, code: string)
 		
 		// FIX: Dynamically determine the environment without options passing.
 		// In production, use an anonymous safe string ("prod") to scrub your home directory.
-		// In dev, pass your raw local path so your server middleware can import it cleanly off your disk!
+		// In dev, pass thr raw local path so the server middleware can import it of the local disk disk!
 		
-		const runtimeFilePath = isBuild ? "prod" : filePath.replace(/\\/g, "/")
+		const runtimeFilePath = isBuild ? "prod" : filePath
 		
-		// PASS 1: Isolate and strip native server-side core import declarations safely
+		// PASS 1: Isolate and strip server-side core import declarations
 		for(const statement of programBody) {
 			if(statement.type === "ImportDeclaration" && statement.source && typeof statement.source.value === "string") {
 				mutations.push({
@@ -68,12 +67,12 @@ export default function rpcMacroLoader(this: Rspack.LoaderContext, code: string)
 									decl.body!.start,
 									decl.body!.end,
 									`{
-		return fetch('/fusion/rpc?id=${uniqueRpcId}&file=${encodeURIComponent(runtimeFilePath)}&method=${exportName}', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify(args)
-		}).then((r) => r.json()).then((d) => d.result);
-	}`,
+										return fetch('/fusion/rpc?id=${uniqueRpcId}&file=${encodeURIComponent(runtimeFilePath)}&method=${exportName}', {
+											method: 'POST',
+											headers: { 'Content-Type': 'application/json' },
+											body: JSON.stringify(args)
+										}).then((r) => r.json()).then((d) => d.result)
+									}`,
 								)
 							},
 						})
@@ -98,10 +97,10 @@ export default function rpcMacroLoader(this: Rspack.LoaderContext, code: string)
 											declarator.init!.start,
 											declarator.init!.end,
 											`(...args) => fetch('/fusion/rpc?id=${uniqueRpcId}&file=${encodeURIComponent(runtimeFilePath)}&method=${exportName}', {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify(args)
-	}).then((r) => r.json()).then((d) => d.result)`,
+													method: 'POST',
+													headers: { 'Content-Type': 'application/json' },
+													body: JSON.stringify(args)
+												}).then((r) => r.json()).then((d) => d.result)`,
 										)
 									},
 								})

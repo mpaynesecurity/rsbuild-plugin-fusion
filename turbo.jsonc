@@ -17,10 +17,13 @@
 			"outputs": [
 				"dist/**"
 			],
-			"inputs": [
-				"$TURBO_DEFAULT$"
-			],
 			"cache": true
+		},
+		"plugin-test": {
+			"dependsOn": [
+				"plugin-build"
+			],
+			"cache": false
 		},
 		"plugin-build-rsdoctor": {
 			"description": "Builds core plugin with Rsdoctor",
@@ -77,8 +80,16 @@
 			],
 			"cache": true
 		},
-		"solid-dev": {
-			"description": "Runs the SolidJs sandbox app",
+		"solid-dev-bun": {
+			"description": "Runs the SolidJs sandbox app using Bun",
+			"dependsOn": [
+				"^plugin-build"
+			],
+			"persistent": true,
+			"cache": false
+		},
+		"solid-dev-node": {
+			"description": "Runs the SolidJs sandbox app using Node",
 			"dependsOn": [
 				"^plugin-build"
 			],

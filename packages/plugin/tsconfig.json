@@ -1,7 +1,13 @@
 {
 	"extends": "../../tsconfig.json",
 	"compilerOptions": {
-		"rootDir": "."
+		"rootDir": "src",
+		"types": [
+			"@rspack/core/module",
+			"@rsbuild/core/types",
+			"node",
+			"bun"
+		]
 	},
 	"exclude": [
 		"rslib.config.ts"

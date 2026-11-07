@@ -16,6 +16,7 @@
 	"scripts": {
 		"devtools": "turbo devtools --port 3006",
 		"plugin:build": "turbo plugin-build && pnpm i",
+		"plugin:test": "turbo plugin-test",
 		"plugin:build:rsdoctor": "turbo plugin-build-rsdoctor",
 		"preact:build": "turbo preact-build",
 		"preact:dev": "turbo preact-dev",
@@ -26,7 +27,8 @@
 		"svelte:test": "turbo svelte-test",
 		"svelte:preview": "turbo svelte-preview",
 		"solid:build": "turbo solid-build",
-		"solid:dev": "turbo solid-dev",
+		"solid:dev-node": "turbo solid-dev-node",
+		"solid:dev-bun": "turbo solid-dev-bun",
 		"solid:test": "turbo solid-test",
 		"solid:preview": "turbo solid-preview",
 		"vue:build": "turbo vue-build",
