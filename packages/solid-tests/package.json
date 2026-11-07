@@ -3,7 +3,7 @@
 	"version": "0.1.0",
 	"type": "module",
 	"scripts": {
-		"solid-preview": "bun dist/index.js",
+		"solid-preview": "PORT=8888 bun dist/index.js",
 		"solid-dev-bun": "bun --bun rsbuild",
 		"solid-dev-node": "rsbuild",
 		"solid-build": "bun --bun rsbuild build",

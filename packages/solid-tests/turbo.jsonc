@@ -1,7 +1,53 @@
 {
+	"$schema": "https://turborepo.dev/schema.json",
 	"extends": [
 		"//"
 	],
+	"tasks": {
+		"solid-build": {
+			"dependsOn": [
+				"^plugin-build"
+			],
+			"outputs": [
+				"dist/**"
+			],
+			"inputs": [
+				"$TURBO_DEFAULT$"
+			],
+			"cache": true
+		},
+		"solid-dev-bun": {
+			"description": "Runs the SolidJs sandbox app using Bun",
+			"dependsOn": [
+				"^plugin-build"
+			],
+			"persistent": true,
+			"cache": false
+		},
+		"solid-dev-node": {
+			"description": "Runs the SolidJs sandbox app using Node",
+			"dependsOn": [
+				"^plugin-build"
+			],
+			"persistent": true,
+			"cache": false
+		},
+		"solid-preview": {
+			"dependsOn": [
+				"solid-build"
+			],
+			"persistent": true,
+			"cache": false
+		},
+		"solid-test": {
+			"description": "Runs the SolidJs test suite",
+			"dependsOn": [
+				"solid-build"
+			],
+			"persistent": true,
+			"cache": false
+		}
+	},
 	"tags": [
 		"test",
 		"solid"

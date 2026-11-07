@@ -11,6 +11,8 @@ dist/
 .idea
 /.env
 /bunfig.toml
-/.turbo/*
 /packages/plugin__OLD/
 /packages/rustify/
+/.turbo/
+/.turbo/cache/
+/.turbo/preferences/

@@ -5,5 +5,29 @@
 	],
 	"tags": [
 		"plugin"
-	]
+	],
+	"tasks": {
+		// Plugin
+		"plugin-build": {
+			"description": "Builds core plugin",
+			"outputs": [
+				"dist/**"
+			],
+			"inputs": [
+				"$TURBO_DEFAULT$"
+			],
+			"cache": true
+		},
+		"plugin-test": {
+			"dependsOn": [
+				"plugin-build"
+			],
+			"cache": false
+		},
+		"plugin-build-rsdoctor": {
+			"description": "Builds core plugin with Rsdoctor",
+			"dependsOn": [],
+			"cache": false
+		}
+	}
 }

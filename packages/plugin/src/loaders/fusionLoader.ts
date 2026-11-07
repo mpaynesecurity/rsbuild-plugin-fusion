@@ -1,7 +1,7 @@
 import { type Rspack } from "@rsbuild/core"
 import MagicString from "magic-string"
-import { createHash } from "node:crypto"
 import { parseSync } from "oxc-parser"
+import { generateHash } from "../helpers.ts"
 
 export default function fusionLoader(this: Rspack.LoaderContext, code: string): string | void {
 	const filePath = this.resourcePath
@@ -18,8 +18,8 @@ export default function fusionLoader(this: Rspack.LoaderContext, code: string): 
 	const result = parseSync(filePath, code, {sourceType: "module"})
 	const s: MagicString = new MagicString(code)
 	
-	const fileHash = createHash("sha256").update(filePath).digest("hex").slice(0, 8)
-	const rpcId: string = `fn_${fileHash}`
+	const fileHash = generateHash(filePath)
+	const fnId = `fn_${fileHash}`
 	
 	const mutations: {start: number; run: () => void}[] = []
 	const exports: string[] = []
@@ -27,13 +27,12 @@ export default function fusionLoader(this: Rspack.LoaderContext, code: string): 
 	if(result.program && Array.isArray(result.program.body)) {
 		const programBody = result.program.body
 		
-		// FIX: Dynamically determine the environment without options passing.
-		// In production, use an anonymous safe string ("prod") to scrub your home directory.
-		// In dev, pass thr raw local path so the server middleware can import it of the local disk disk!
-		
+		// Dynamically determine the environment without options passing.
+		// In production, use an anonymous string ("prod") to remove the local directory.
+		// In dev, pass thr raw local path so the server middleware can import it of the local disk
 		const runtimeFilePath = isBuild ? "prod" : filePath
 		
-		// PASS 1: Isolate and strip server-side core import declarations
+		// Pass 1: Isolate and strip server-side core import declarations
 		for(const statement of programBody) {
 			if(statement.type === "ImportDeclaration" && statement.source && typeof statement.source.value === "string") {
 				mutations.push({
@@ -49,7 +48,7 @@ export default function fusionLoader(this: Rspack.LoaderContext, code: string): 
 			}
 		}
 		
-		// PASS 2: Independent processing pass for Export declarations
+		// Pass 2: Independent processing pass for Export declarations
 		for(const statement of programBody) {
 			if(statement.type === "ExportNamedDeclaration") {
 				const decl = statement.declaration
@@ -57,7 +56,7 @@ export default function fusionLoader(this: Rspack.LoaderContext, code: string): 
 				if(decl) {
 					if(decl.type === "FunctionDeclaration" && decl.id && decl.body) {
 						const exportName: string = decl.id.name
-						const uniqueRpcId = `${rpcId}_${exportName}`
+						const uniqueRpcId = `${fnId}_${exportName}`
 						exports.push(exportName)
 						
 						mutations.push({
@@ -87,7 +86,7 @@ export default function fusionLoader(this: Rspack.LoaderContext, code: string): 
 								declarator.init
 							) {
 								const exportName: string = declarator.id.name
-								const uniqueRpcId = `${rpcId}_${exportName}`
+								const uniqueRpcId = `${fnId}_${exportName}`
 								exports.push(exportName)
 								
 								mutations.push({
@@ -117,16 +116,15 @@ export default function fusionLoader(this: Rspack.LoaderContext, code: string): 
 		}
 	}
 	
-	
-	// PROD BUILD COMPILER SIDE-STEP: Emit virtual code strings across the process boundary natively
+	// Prod build compiler step: Emit virtual code strings across the process boundary
 	if(isBuild && exports.length > 0) {
 		const intermediatePayload = {
-			rpcId,
+			rpcId: fnId,
 			filePath,
 			exports,
 			originalFileCode: code,
 		}
-		this.emitFile(`.fusion-internal/${rpcId}.json`, JSON.stringify(intermediatePayload))
+		this.emitFile(`.fusion-internal/${fnId}.json`, JSON.stringify(intermediatePayload))
 	}
 	
 	const map = s.generateMap({hires: true})

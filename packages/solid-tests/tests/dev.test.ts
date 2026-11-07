@@ -17,8 +17,8 @@ describe("Solid Plugin", async () => {
 		// It never reads or evaluates your source code files directly!
 		await page.goto(`http://localhost:${server.port}`)
 		
-		await expect(page.locator("#version")).toHaveText(process.versions.bun)
 		await expect(page.locator("#homedir")).toHaveText(homedir())
+		await expect(page.locator("#file-content")).toHaveText("Written by fusion!")
 		await page.screenshot({
 			path: "./dev.png",
 		})

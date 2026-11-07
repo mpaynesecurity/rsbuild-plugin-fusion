@@ -1,6 +1,7 @@
 import { expect, test, describe } from "@rstest/playwright"
 import type { Subprocess } from "bun"
-import { rm } from "node:fs/promises"
+
+import { homedir } from "node:os"
 
 // Keep track of the process at the file level
 let bunProcess: Subprocess<any, any>
@@ -33,11 +34,10 @@ describe("Built Solid sandbox", () => {
 	test("Should serve the built app", async ({page}) => {
 		// Reference the matching local port
 		await page.goto(`http://localhost:${TEST_PORT}`)
-		await expect(page.locator("#version")).toHaveText(process.versions.bun)
+		await expect(page.locator("#homedir")).toHaveText(homedir())
+		await expect(page.locator("#file-content")).toHaveText("Written by fusion!")
 		await page.screenshot({
 			path: "./prod.png",
 		})
 	})
 })
-
-
