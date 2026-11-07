@@ -7,7 +7,6 @@ allowBuilds:
 
 catalog:
   "@rsbuild/core": "^2.2.12"
-  "vite": "^8.2.1"
   "magic-string": "^1.4.1"
   "oxc-parser": "^0.150.0"
   "oxc-walker": "^1.1.1"
@@ -17,9 +16,7 @@ catalog:
   "@rstest/core": "^0.12.3"
   "@testing-library/dom": "^10.4.2"
   "@testing-library/jest-dom": "^7.0.1"
-  "vite-plugin-inspect": "^12.0.2"
-  "vite-plugin-solid": "^2.11.12"
-  "@rsbuild/plugin-babel": "^2.0.1"
+  "@rsbuild/plugin-babel": "^2.1.0"
   "happy-dom": "^20.14.5"
   "@rsbuild/plugin-solid": "^1.2.2"
   "@rsbuild/plugin-tailwindcss": "^2.0.3"
@@ -27,8 +24,8 @@ catalog:
   "@rslib/core": "^1.0.3"
   "@solidjs/router": "^1.0.0"
   "solid-js": "^1.9.15"
-  "@types/bun": "^1.4.2"
-  "@types/node": "^26.1.1"
+  "@types/bun": "^1.4.4"
+  "@types/node": "^26.6.6"
   "cross-env": "^10.1.0"
   "typescript": "^6.0.3"
   "@rstest/playwright": "^0.12.3"
@@ -41,3 +38,10 @@ versioning:
   #    "@mpaynesecurity/rsbuild-plugin-fusion": beta
   changelog:
     storage: repository
+
+dedupeDirectDeps: true
+dedupePeerDependents: true
+dedupePeers: true
+autoDedupe: true
+lockfile:
+  includeResolutionSettings: true
