@@ -1,7 +1,15 @@
+import { beforeAll } from "@rstest/core"
 import { expect, test, describe } from "@rstest/playwright"
 import type { Subprocess } from "bun"
+import { existsSync, rmSync } from "node:fs"
 
 import { homedir } from "node:os"
+
+beforeAll(() => {
+	if(existsSync("./prod.png")) {
+		rmSync("./prod.png")
+	}
+})
 
 // Keep track of the process at the file level
 let bunProcess: Subprocess<any, any>

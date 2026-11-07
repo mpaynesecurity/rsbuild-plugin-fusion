@@ -3,6 +3,7 @@
 	"compilerOptions": {
 		"isolatedDeclarations": false,
 		"jsxImportSource": "solid-js",
-		"jsx": "preserve"
+		"jsx": "preserve",
+		"erasableSyntaxOnly": false
 	}
 }

@@ -1,7 +1,7 @@
 import { createResource, Show } from "solid-js"
 
-import { getHomeDir, readFileFromHomeDir } from "./fn01"
-
+import { getHomeDir } from "./fn01"
+import { readFileFromHomeDir } from "./fn02.ts"
 
 export const App = () => {
 	const [homeDir] = createResource(getHomeDir)

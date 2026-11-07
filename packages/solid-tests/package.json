@@ -15,15 +15,17 @@
 		"@mpaynesecurity/rsbuild-plugin-fusion": "workspace:*"
 	},
 	"devDependencies": {
-		"@rstest/playwright": "catalog:",
 		"@rsbuild/core": "catalog:",
 		"@rsbuild/plugin-babel": "catalog:",
+		"@rsbuild/plugin-solid": "^1.2.2",
 		"@rsbuild/plugin-tailwindcss": "catalog:",
+		"@rstest/adapter-rsbuild": "catalog:",
+		"@rstest/core": "catalog:",
+		"@rstest/playwright": "catalog:",
 		"@types/bun": "catalog:",
 		"@types/node": "catalog:",
-		"tailwindcss": "^4.3.1",
-		"@rstest/adapter-rsbuild": "catalog:",
-		"@rstest/core": "catalog:"
+		"jsdom": "^31.0.0",
+		"tailwindcss": "^4.3.1"
 	},
 	"peerDependencies": {
 		"@solidjs/router": "catalog:",

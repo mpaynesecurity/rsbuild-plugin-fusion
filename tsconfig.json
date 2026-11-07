@@ -15,7 +15,7 @@
 		"verbatimModuleSyntax": true,
 		"resolvePackageJsonImports": true,
 		"noFallthroughCasesInSwitch": true,
-		//"erasableSyntaxOnly": true,
+		"erasableSyntaxOnly": true,
 		"resolveJsonModule": true,
 		"moduleResolution": "bundler",
 		"useDefineForClassFields": true,

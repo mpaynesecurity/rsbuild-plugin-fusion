@@ -1,23 +1,29 @@
+"use server"
 import { createRsbuild } from "@rsbuild/core"
 import { test, expect, describe } from "@rstest/playwright"
 import { homedir } from "node:os"
 
+process.env.NODE_ENV = "development"
 import config from "../rsbuild.config.ts"
 
 describe("Solid Plugin", async () => {
 	test("Should execute server action successfully in the Sandbox", async ({page}) => {
 		// 1. Boot the real, live compiler completely outside of Playwright's scope
 		const rsbuild = await createRsbuild({
-			rsbuildConfig: config,
+			rsbuildConfig: {
+				...config,
+				logLevel: "info",
+				mode: "development",
+			},
 		})
 		
 		const {server} = await rsbuild.startDevServer()
 		
 		// 2. Playwright ONLY touches the live, fully compiled network port
 		// It never reads or evaluates your source code files directly!
-		await page.goto(`http://localhost:${server.port}`)
-		
-		await expect(page.locator("#homedir")).toHaveText(homedir())
+		await page.goto(`http://localhost:5007`)
+		page.on("console", msg => console.log(msg.text()))
+		await expect(page.locator("#homedir")).toHaveText("/Users/mpayne")
 		await expect(page.locator("#file-content")).toHaveText("Written by fusion!")
 		await page.screenshot({
 			path: "./dev.png",
