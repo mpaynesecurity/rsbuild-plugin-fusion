@@ -3,8 +3,7 @@ import MagicString from "magic-string"
 import { createHash } from "node:crypto"
 import { parseSync } from "oxc-parser"
 
-
-export default function rpcMacroLoader(this: Rspack.LoaderContext, code: string): string | void {
+export default function fusionLoader(this: Rspack.LoaderContext, code: string): string | void {
 	const filePath = this.resourcePath
 	const isBuild = this.mode === "production"
 	
